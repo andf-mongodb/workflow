@@ -10,7 +10,7 @@
 #################
 
 ## Your github username:
-GITUSER=andf-mongodb
+GITUSER=your_github_username
 
 ## Your docs workspace (i.e. where to git clone to)
 ## If you use a ~ in the path, don't quote the value:
@@ -21,7 +21,7 @@ WORKSPACE=~/doc_workspace
 ##################
 
 ## Collect positional parameters:
-## 1: Intended branch name (i.e. Jira DOCS/DOCSP ticket # + description)
+## 1: Intended branch name (i.e. Jira ticket # + description)
 BRANCHNAME=$1
 
 # Quit if no parameters were passed:

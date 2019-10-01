@@ -1,6 +1,9 @@
 #!/bin/bash
 
-## Quick script that performs the following:
+## Quick script to automate building and staging a docstools site
+## for use with a makefile that supports html building and staging.
+
+## Script performs the following:
 ## 1. Clean build dir
 ## 2. make html
 ## 3. make stage
