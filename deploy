@@ -11,7 +11,8 @@ TMPFILE=/tmp/deploy$$.tmp
 # Clean builddir
 GITROOT=`git rev-parse --show-toplevel 2>&1`
 if [ `echo $GITROOT | grep -c '^fatal: not a git repository'` -gt 0 ]; then
-   echo "Not in a git repo. Aborting"
+   echo -e "\nERROR: Not in a git repo!"
+   echo -e "       Aborting...\n"
    exit;
 else
    rm -rf $GITROOT/build/*
@@ -20,12 +21,16 @@ fi
 # make / make stage
 cd $GITROOT
 make html
-echo -e "\nBuild complete\n"
+echo -e "\n  ##################"
+echo "  # Build complete #"
+echo -e "  ##################\n"
 # Redirect stage to grab URL from:
 make stage | tee $TMPFILE
 STAGE_URL=`tail -1 $TMPFILE | cut -d ' ' -f 3`
 rm -f $TMPFILE
-echo -e "\nStage complete\n"
+echo -e "\n  ##################"
+echo "  # Stage complete #"
+echo -e "  ##################\n"
 
 # OSX ONLY: Open staged build in browser:
 open $STAGE_URL
