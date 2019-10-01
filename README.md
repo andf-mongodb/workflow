@@ -1,9 +1,10 @@
 # workflow (and deploy)
-Bash wrappers to automate using the MongoDB docschain toolset. Currently, comprised of two scripts:
+Bash wrappers to automate using a git-based docstools workflow (like at MongoDB). Currently, comprised of two scripts:
 
 ## workflow
-Checks out a new branch in your docs workspace and sets it up for work, then opens new VS Code workspace. 
-Requires: Pass the intended new branch name (like DOC-12345-fix-typo-in-example) as parameter.
+Checks out a new branch in your docs workspace and sets it up for work, then opens new VS Code workspace in that repo. 
+_Requires:_ Pass the intended new branch name (like DOC-12345-fix-typo-in-example) as parameter.
+
 Tasks:
 1. git clone git@github.com:YOU/docs.git
 2. git remote add upstream git@github.com:mongodb/docs.git
@@ -17,7 +18,9 @@ Tasks:
 Usage: `workflow DOC-12345-fix-typo-in-example` from anywhere on your system.
 
 ## deploy
-Stages the repo for viewing in a webbrowser by performing the following tasks:
+Stages the repo for viewing in a webbrowser.
+
+Tasks:
 1. Clean build directory, if present
 2. make html
 3. make stage
