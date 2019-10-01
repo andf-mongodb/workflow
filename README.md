@@ -1,5 +1,6 @@
 # workflow (and deploy)
-Bash wrappers to automate using a git-based docstools workflow (like at MongoDB). Currently, comprised of two scripts:
+Bash wrappers to automate using a git-based docstools workflow (like at MongoDB). For best results, place in $PATH!
+Currently, comprised of two scripts:
 
 ## workflow
 Checks out a new branch in your docs workspace and sets it up for work, then opens new VS Code workspace in that repo. 
