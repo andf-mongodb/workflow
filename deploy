@@ -1,0 +1,34 @@
+#!/bin/bash
+
+## Quick script that performs the following:
+## 1. Clean build dir
+## 2. make html
+## 3. make stage
+## 4. Opens the resulting stage build in browser
+
+TMPFILE=/tmp/deploy$$.tmp
+
+# Clean builddir
+GITROOT=`git rev-parse --show-toplevel 2>&1`
+if [ `echo $GITROOT | grep -c '^fatal: not a git repository'` -gt 0 ]; then
+   echo "Not in a git repo. Aborting"
+   exit;
+else
+   rm -rf $GITROOT/build/*
+fi
+
+# make / make stage
+cd $GITROOT
+make html
+echo -e "\nBuild complete\n"
+# Redirect stage to grab URL from:
+make stage | tee $TMPFILE
+STAGE_URL=`tail -1 $TMPFILE | cut -d ' ' -f 3`
+rm -f $TMPFILE
+echo -e "\nStage complete\n"
+
+# OSX ONLY: Open staged build in browser:
+open $STAGE_URL
+
+# LINUX ONLY: Open staged build in browser (tries everything):
+#xdg-open $STAGE_URL || sensible-browser $STAGE_URL || x-www-browser $STAGE_URL || gnome-open $STAGE_URL
