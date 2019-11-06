@@ -38,9 +38,13 @@ Updates your forked copy of MDB docs with the latest from upstream.
 # Example workflow usage, using these tools:
 
 1. `workflow DOCS-12345-Correct-Grammer-Error-Example`
+
 2. In resulting VSCode window, edit appropriate RST and YAML files to address concerns raised in Jira ticket
+
 3. `review` from within the VSCode terminal (within that git repo) to submit for CR
+
 4a. CR is returned. If LGTM: `publish` from within VSCode terminal, or
+
 4b. CR comes back with feedback. Make changes, and then return to step 3 (`review`).
 
 Occassionally, run `rebasefork` and `cleanspace`
