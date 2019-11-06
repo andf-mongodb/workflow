@@ -4,15 +4,18 @@ Contains a series of Bash wrappers to automate using a git-based docstools workf
 Comprised of the following tools:
 
 ## workflow
-Checks out a new branch in your docs workspace and sets it up for work, then opens new VS Code workspace in that repo. 
-_Requires:_ Pass the intended new branch name (like DOC-12345-fix-typo-in-example) as a parameter.
+Checks out a new branch in your docs workspace and sets it up for work, then opens new VS Code workspace in that repo.
+
+_Usage:_ `workflow DOC-12345-fix-typo-in-example` from anywhere on the box.
 
 ## deploy
 Stages the repo for viewing in a webbrowser.
+
 _Usage:_ `deploy` from within the git repo you wish to stage.
 
 ## review
 Submits your changes for code review using the MDB internal Rietveld tool. If the first round of CR, uses the new CR ID. If a subsequent round, re-uses the existing one. Requires locally storing the CR ID for now.
+
 _Usage:_ `review` from within the git repo you wish to submit.
 
 ## publish
