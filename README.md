@@ -20,6 +20,7 @@ _Usage:_ `review` from within the git repo you wish to submit.
 
 ## publish
 Once LGTM has been obtained, submits the code as-is to Git Hub, and provides links to the next three web-based steps (Close JIRA, close CR, PR in GitHub)
+
 _Usage:_ `publish` from within the git repo you wish to publish.
 
 # Supporting Tools
