@@ -1,0 +1,29 @@
+#!/bin/bash
+
+## Cleans out all build/* directories nested in your
+## docs workspace, and let's you know how much space
+## was freed up!
+
+############################################################
+## YOUR VALUES ##
+#################
+
+## Your docs workspace (i.e. where to git clone to)
+## If you use a ~ in the path, don't quote the value:
+WORKSPACE=~/doc_workspace
+
+############################################################
+## BEGIN SCRIPT ##
+##################
+
+## Just for fun, how much space were we using:
+USED_RAW=`du -sk $WORKSPACE/*/build/ | cut -f 1 | grep -v ^0$ | paste -sd+ -| bc`
+
+if [ ! -z $USED_RAW ]; then
+    USED=`echo "scale=2;$USED_RAW/1024/1024" | bc`
+    echo -e "\nworking ...\n"
+    rm -rf $WORKSPACE/*/build/*
+    echo -e "\nFreed up $USED GB!\n"
+else
+    echo "Nothing to clean up!"
+fi

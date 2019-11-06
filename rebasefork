@@ -1,0 +1,39 @@
+#!/bin/bash
+
+############################################################
+## YOUR VALUES ##
+#################
+
+## Your github username:
+GITUSER=andf-mongodb
+
+############################################################
+## BEGIN SCRIPT ##
+##################
+
+TMPDIR=/tmp/deleteme$$
+
+mkdir -p $TMPDIR
+cd $TMPDIR
+git clone git@github.com:$GITUSER/docs.git
+cd docs
+git remote add upstream git@github.com:mongodb/docs.git
+
+# Current commit count before:
+BEFORE=`git rev-list --left-right --count origin | awk '{print $2}'`
+
+git fetch upstream
+git rebase upstream/master
+git push origin master
+
+# New commit count after:
+AFTER=`git rev-list --left-right --count origin | awk '{print $2}'`
+
+# Just for fun, report number of commits moved:
+NUM_COMMITS=`echo "$AFTER - $BEFORE" | bc`
+echo "Moved ahead $NUM_COMMITS commits"
+
+rm -rf $TMPDIR
+
+
+

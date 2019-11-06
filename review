@@ -1,0 +1,106 @@
+#!/bin/bash
+
+## Bash script to automate MongoDB code review submission,
+## essentially a wrapper around code_review. Checks to see
+## if current repo has been submitted before, if so, reuses
+## code_review ID, otherwise generates new one. Also handles
+## requisite git commands. This script does not take any
+## parameters.
+
+############################################################
+## YOUR VALUES ##
+#################
+
+## Your docs workspace (i.e. where to git clone to)
+## If you use a ~ in the path, don't quote the value:
+WORKSPACE=~/doc_workspace
+
+## Directory to store workflow-specific status:
+WORKFLOW_STATUS_DIR=$WORKSPACE/workflow
+
+############################################################
+## BEGIN SCRIPT ##
+##################
+
+TMPFILE=/tmp/review$$.tmp
+CR_ID=""
+
+## Exit if not in a valid git repo:
+GITROOT=`git rev-parse --show-toplevel 2>&1`
+if [ `echo $GITROOT | grep -c '^fatal: not a git repository'` -gt 0 ]; then
+   echo -e "\nERROR: Not in a git repo!"
+   echo -e "       Aborting...\n"
+   exit;
+fi
+
+## Determine $BRANCHNAME:
+BRANCHNAME=`git rev-parse --abbrev-ref HEAD`
+
+## Check to see if we have run code_review before. NOTE: this
+## makes use of a directory outside of this git repo to store
+## this value!
+if [ ! -f $WORKFLOW_STATUS_DIR/$BRANCHNAME ]; then
+   touch $WORKFLOW_STATUS_DIR/$BRANCHNAME
+elif [ `grep -c '^CR_ID=' $WORKFLOW_STATUS_DIR/$BRANCHNAME` -gt 0 ]; then
+   CR_ID=`grep CR_ID $WORKFLOW_STATUS_DIR/$BRANCHNAME | cut -d"=" -f2`
+fi
+
+## Get exiting GIT_EDITOR, to restore later:
+OLD_GIT_EDITOR=`echo $GIT_EDITOR`
+
+## Set custom giteditor_autoamend as GIT_EDITOR:
+export GIT_EDITOR=giteditor_autoamend
+
+# Show user current status, before taking any action:
+git status
+
+## Have we committed yet on this branch?
+COMMITTED_YET=`git status -uno | grep upstream`
+
+## If this is our first commit, prompt for a commit message,
+## otherwise silently amend the existing commit:
+if [ `echo $COMMITTED_YET | grep -c 'up to date'` -gt 0 ]; then
+   echo -e "\nINPUT REQUIRED: You have not committed anything yet!"
+   read -p '                COMMIT MESSAGE: ' COMMIT_MESSAGE
+   git add .
+   git commit -m "$COMMIT_MESSAGE"
+elif [ `echo $COMMITTED_YET | grep -c 'is ahead of'` -gt 0 ]; then
+   git add .
+   git commit --amend
+else
+   echo -e "\nERROR: Unable to determine git commit status!"
+   echo -e "       You must manually commit or otherwise correct"
+   echo -e "       the situation!"
+   echo -e "       Aborting...\n"
+   exit;
+fi
+
+## If this is our first code_review run, capture the resulting
+## issue ID. If not, reuse the existing issue ID:
+if [ -z $CR_ID ]; then
+   git pull --rebase
+   code_review | tee $TMPFILE 2> /dev/null
+   CR_ID=`grep 'Issue created.' $TMPFILE | cut -d"/" -f4`
+   echo CR_ID=$CR_ID >> $WORKFLOW_STATUS_DIR/$BRANCHNAME
+else
+   # DO NOT GIT PULL --REBASE BETWEEN CR ROUNDS!
+   code_review $CR_ID 2> /dev/null
+fi
+
+# Assemble the code review URL:
+CR_URL=https://mongodbcr.appspot.com/$CR_ID
+
+# OSX ONLY: Open CR in browser:
+open $CR_URL
+
+# LINUX ONLY: Open CR in browser (tries everything):
+#xdg-open $CR_URL || sensible-browser $CR_URL || x-www-browser $CR_URL || gnome-open $CR_URL
+
+# Replace GIT_EDITOR with original value:
+GIT_EDITOR=`echo $OLD_GIT_EDITOR`
+
+# Cleanup:
+rm -f $TMPFILE
+
+# OSX ONLY: Restore user focus back to VS Code:
+open -a "Visual Studio Code"

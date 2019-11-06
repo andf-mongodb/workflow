@@ -1,0 +1,67 @@
+#!/bin/bash
+
+## Once LGTM has been attained in CR, this script publishes to
+## GitHub and provides easy clickable steps to the reamining
+## non-automatable tasks. Must be called within the Git repo
+## you wish to publish. Takes no arguments.
+
+############################################################
+## YOUR VALUES ##
+#################
+
+## Your github username:
+GITUSER=andf-mongodb
+
+## Your docs workspace (i.e. where to git clone to)
+## If you use a ~ in the path, don't quote the value:
+WORKSPACE=~/doc_workspace
+
+## Directory to store workflow-specific status:
+WORKFLOW_STATUS_DIR=$WORKSPACE/workflow
+
+############################################################
+## BEGIN SCRIPT ##
+##################
+
+# Must be in a git repo:
+BRANCH=`git rev-parse --abbrev-ref HEAD`
+if [ `echo $BRANCH | grep -c '^fatal: not a git repository'` -gt 0 ]; then
+   echo -e "\nERROR: Not in a git repo!"
+   echo -e "       Aborting...\n"
+   exit;
+fi
+
+# Collect info:
+CR_ID=`grep CR_ID $WORKFLOW_STATUS_DIR/$BRANCH | cut -d"=" -f2`
+JIRA=`echo $BRANCH | awk -F\- '{print $1"-"$2}'`
+
+# Catch errors, if any, and exit:
+# In reality, you could still use this tool, you just wouldn't get nice URLs
+# at the end. But then why use this tool??
+if [ -z $CR_ID ]; then
+   echo -e "\nERROR: Unable to determine Code Review ID!"
+   echo -e "       You cannot use this tool"
+   echo -e "       Aborting...\n"
+   exit;
+elif [ `echo $BRANCH | egrep -c '(^DOCS-|^DOCSP-)'` -lt 1 ]; then
+   echo -e "\nERROR: Unable to determine Jira Ticket from Branch Name!"
+   echo -e "       You cannot use this tool"
+   echo -e "       Aborting...\n"
+   exit;
+fi
+
+# Publish to GitHub:
+git pull --rebase
+git push origin $BRANCH
+
+# Build URLs:
+GITHUB_URL="https://github.com/$GITUSER/docs/pull/new/$BRANCH"
+CR_URL=https://mongodbcr.appspot.com/$CR_ID
+JIRA_URL="https://jira.mongodb.org/browse/$JIRA"
+
+# Provide links (clickable in VS Code and iTerm2):
+echo -e "\n##############################  PUBLISH READY!  ##############################"
+echo -e "\n   1. PULL REQUEST: $GITHUB_URL"
+echo -e "\n   2. CLOSE THE CR: $CR_URL" 
+echo -e "\n   3. CLOSE TICKET: $JIRA_URL"
+echo -e "\n##############################################################################\n"

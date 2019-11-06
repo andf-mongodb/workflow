@@ -10,23 +10,49 @@
 #################
 
 ## Your github username:
-GITUSER=your_github_username
+GITUSER=andf-mongodb
 
 ## Your docs workspace (i.e. where to git clone to)
 ## If you use a ~ in the path, don't quote the value:
 WORKSPACE=~/doc_workspace
 
+## Directory to store workflow-specific status:
+WORKFLOW_STATUS_DIR=$WORKSPACE/workflow
+
 ############################################################
 ## BEGIN SCRIPT ##
 ##################
 
-## Collect positional parameters:
-## 1: Intended branch name (i.e. Jira ticket # + description)
+## Default to Master unless overridden with -b:
+UPSTREAM_BRANCH="master"
+
+## Check for UPSTREAM_BRANCH override: for publishing directly
+## to future release branches, like v4.2.1:
+while getopts ":b:" opt; do
+  case ${opt} in
+    b )
+      UPSTREAM_BRANCH=$OPTARG
+      ;;
+    \? )
+      echo "Invalid option: $OPTARG" 1>&2
+      ;;
+    : )
+      echo -e "\nERROR: If you specify -$OPTARG, you must provide a branch name (like 'v4.2.1')" 1>&2
+      ;;
+  esac
+done
+shift $((OPTIND -1))
+
+## Collect intended branchname from provided parameter:
 BRANCHNAME=$1
 
-# Quit if no parameters were passed:
+# Quit if no parameters were passed or if $BRANCHNAME is incomplete:
 if [ -z $BRANCHNAME ]; then
    echo -e "\nERROR: You must provide the intended branch name as a parameter."
+   echo -e "       Exiting ...\n"
+   exit;
+elif [ `echo $BRANCHNAME | awk -F\- '{print NF-1}'` -lt 2 ]; then
+   echo -e "\nERROR: Your branchname must consist of a JIRA TICKET + a DESCRIPTION."
    echo -e "       Exiting ...\n"
    exit;
 fi
@@ -46,8 +72,13 @@ git clone git@github.com:$GITUSER/docs.git
 cd docs
 git remote add upstream git@github.com:mongodb/docs.git
 sed -i '' 's%remote = origin%remote = upstream%g' .git/config
+
+if [ ! -f $WORKFLOW_STATUS_DIR/$BRANCHNAME ]; then
+   touch $WORKFLOW_STATUS_DIR/$BRANCHNAME
+fi
+
 git pull upstream
-git checkout -b $BRANCHNAME upstream/master
+git checkout -b $BRANCHNAME upstream/$UPSTREAM_BRANCH
 git pull --rebase
 
 ## Rename `docs` based on BRANCHNAME:

@@ -1,0 +1,22 @@
+#!/bin/bash
+
+## Auto-amender for git. Use by setting GIT_EDITOR env variable
+## to this script, like so (with bash):
+##
+##     export GIT_EDITOR=/path/to/giteditor_autoamend
+##
+## Then amend your commit  as usual:
+##
+##     git commit --amend
+##
+## This script will write + close the commit with no changes.
+## Useful if you use the same commit over a series of file
+## changes, as with multiple rounds of code review.
+##
+## For best results, save your existing GIT_EDITOR first, and
+## then restore it afterwards!
+
+ed $1 <<EOT
+wq
+EOT
+
