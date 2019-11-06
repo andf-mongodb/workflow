@@ -10,7 +10,7 @@
 #################
 
 ## Your github username:
-GITUSER=andf-mongodb
+GITUSER=your_git_user
 
 ## Your docs workspace (i.e. where to git clone to)
 ## If you use a ~ in the path, don't quote the value:
