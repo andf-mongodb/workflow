@@ -2,6 +2,7 @@
 
 ## Quick script to automate building and staging a docstools site
 ## for use with a makefile that supports html building and staging.
+## Script takes no arguments.
 
 ## Script performs the following:
 ## 1. Clean build dir
@@ -9,31 +10,39 @@
 ## 3. make stage
 ## 4. Opens the resulting stage build in browser
 
+############################################################
+## BEGIN SCRIPT ##
+##################
+
 TMPFILE=/tmp/deploy$$.tmp
 
-# Clean builddir
+# Must be in a git repo:
 GITROOT=`git rev-parse --show-toplevel 2>&1`
 if [ `echo $GITROOT | grep -c '^fatal: not a git repository'` -gt 0 ]; then
    echo -e "\nERROR: Not in a git repo!"
    echo -e "       Aborting...\n"
    exit;
-else
-   rm -rf $GITROOT/build/*
 fi
 
-# make / make stage
+# Clean:
+rm -rf $GITROOT/build/*
+
+# Run make / make stage (and squash make html logspam):
 cd $GITROOT
-make html
+make html 2>&1 >/dev/null | egrep -v " Xferd | Dload | --:--:-- "
 echo -e "\n  ##################"
 echo "  # Build complete #"
 echo -e "  ##################\n"
-# Redirect stage to grab URL from:
-make stage | tee $TMPFILE
+echo "     staging ... "
+# Redirect stage to grab URL from (also squash stage logspam):
+make stage | tee $TMPFILE 2>&1 > /dev/null
 STAGE_URL=`tail -1 $TMPFILE | cut -d ' ' -f 3`
 rm -f $TMPFILE
 echo -e "\n  ##################"
 echo "  # Stage complete #"
 echo -e "  ##################\n"
+echo "     $STAGE_URL"
+echo ""
 
 # OSX ONLY: Open staged build in browser:
 open $STAGE_URL
