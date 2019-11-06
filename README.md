@@ -43,9 +43,11 @@ Updates your forked copy of MDB docs with the latest from upstream.
 
 3. `review` from within the VSCode terminal (within that git repo) to submit for CR
 
-4. a. CR is returned. If LGTM: `publish` from within VSCode terminal, or
+4. One of:
 
-4. b. CR comes back with feedback. Make changes, and then return to step 3 (`review`).
+   - CR is returned. If LGTM: `publish` from within VSCode terminal, or
+
+   - CR comes back with feedback. Make changes, and then return to step 3 (`review`).
 
 Occassionally, run `rebasefork` and `cleanspace`
 
