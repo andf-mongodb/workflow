@@ -27,7 +27,7 @@ _Usage:_ `publish` from within the git repo you wish to publish.
 Contains a collection of small support scripts.
 
 ## giteditor_autoamed
-Used by `review` to handle `git commit --amend` situations where the commit message is not changed
+Used by `review` to automate `git commit --amend` situations where the commit message is not changed
 
 ## cleanspace
 Clear out all build directories from all local git repos
