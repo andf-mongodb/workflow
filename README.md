@@ -45,18 +45,23 @@ Updates your forked copy of MDB docs with the latest from upstream.
 
 # Example workflow usage, using these tools:
 
-1. `workflow DOCS-12345-Correct-Grammer-Error-Example`
+1. `workflow DOC-12345-fix-typo-in-example`
 
-2. In resulting VSCode window, edit appropriate RST and YAML files to address concerns raised in Jira ticket
+2. In resulting VSCode window, edit appropriate RST and YAML files to address concerns raised in Jira ticket.
 
-3. `review` from within the VSCode terminal (within that git repo) to submit for CR
+3. `stage` within VSCode terminal to preview changes in web browser (via autobuilder)
 
-4. One of:
+4. Repeat steps 2 and 3 until ready for review.
 
-   - CR is returned. If LGTM: `publish` from within VSCode terminal, or
+5. `review` from within the VSCode terminal to submit for CR when ready for feedback
 
-   - CR comes back with feedback. Make changes, and then return to step 3 (`review`).
+6. One of:
 
+   - CR is returned with LGTM: `push` from within VSCode terminal to create PR
+
+   - CR comes back with feedback. Make changes, and then return to step 2-3-4-5 (edit - `stage` - `review`).
+
+7. If necessary (as often is), backport to previous version(s) with `backport v4.0` (and `backport v3.6` and `backport v3.4`)
 
 Occassionally, run `rebasefork` and `cleanspace`
 
