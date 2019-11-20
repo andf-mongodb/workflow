@@ -14,7 +14,7 @@
 ## BEGIN SCRIPT ##
 ##################
 
-TMPFILE=/tmp/deploy$$.tmp
+TMPFILE=/tmp/stage$$.tmp
 
 # Must be in a git repo:
 GITROOT=`git rev-parse --show-toplevel 2>&1`

@@ -1,16 +1,16 @@
 #!/bin/bash
 
-## Once LGTM has been attained in CR, this script publishes to
+## Once LGTM has been attained in CR, this script pushes to
 ## GitHub and provides easy clickable steps to the reamining
 ## non-automatable tasks. Must be called within the Git repo
-## you wish to publish. Takes no arguments.
+## you wish to push. Takes no arguments.
 
 ############################################################
 ## YOUR VALUES ##
 #################
 
 ## Your github username:
-GITUSER=your_git_user
+GITUSER=andf-mongodb
 
 ## Your docs workspace (i.e. where to git clone to)
 ## If you use a ~ in the path, don't quote the value:
@@ -50,7 +50,7 @@ elif [ `echo $BRANCH | egrep -c '(^DOCS-|^DOCSP-)'` -lt 1 ]; then
    exit;
 fi
 
-# Publish to GitHub:
+# Push to GitHub:
 git pull --rebase
 git push origin $BRANCH
 

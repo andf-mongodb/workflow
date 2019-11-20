@@ -1,0 +1,181 @@
+#!/bin/bash
+
+## Bash script to automate BAISC MongoDB backports.
+## Backports to ONE previous version branch at a time.
+## If a conflict is encountered in the course of a
+## cherry-pick, notifies the user and terminates,
+## else completes the backport and presents the
+## user with the relevant PR URL.
+
+## Requirements:
+##
+## - Must be called from within a git repo
+## - Must have committed the change you wish
+##   to backport
+## - Must be in the appropriate branch, and
+##   NOT in master, or a previous version branch
+
+## Supports the following usage:
+##
+## backport <v4.0|v3.6|v3.4>
+##     backports commit where commit message contains
+##     the jira ticket that starts your current branch-
+##     name to the version specified. Only accepts ONE.
+## backport resume
+##     if previous invocation of this utility met with
+##     a conflict in the cherry-pick stage, and you have
+##     since manually corrected it, use this to resume
+##     the cherry pick and publish as normal
+## backport edit
+##     if you have already created the PR to the previous
+##     branch, wish to make a last minute change, and
+##     have not complete the PR in GitHub, you may use
+##     this option to edit the PR.
+
+############################################################
+## YOUR VALUES ##
+#################
+
+## Your github username:
+GITUSER=andf-mongodb
+
+############################################################
+## BEGIN SCRIPT ##
+##################
+
+TMPFILE=/tmp/backport$$.tmp
+
+## Check for provided parameter:
+PARAMETER=$1
+
+# Parse user-provided parameter and determine what to do:
+if [ -z $PARAMETER ]; then
+   echo -e "\nERROR: No parameter provided. You must provide one of:"
+   echo -e "     - <vers>: ONE of v4.0, v3.6, v3.4"
+   echo -e "     - resume: to resume an in-progress backport"
+   echo -e "     - edit: to edit an already pushed backport"
+   echo -e "       Exiting ...\n"
+   exit;
+elif [ ! -z $2 ]; then
+   echo -e "\nERROR: Too many parameters provided. You must provide one of:"
+   echo -e "     - <vers>: ONE of v4.0, v3.6, v3.4"
+   echo -e "     - resume: to resume an in-progress backport"
+   echo -e "     - edit: to edit an already pushed backport"
+   echo -e "       Exiting ...\n"
+   exit;
+elif [[ "$PARAMETER" =~ ^(resume|RESUME|Resume)$ ]]; then
+   RESUME=1
+   echo "Resuming existing cherry-pick ..."
+elif [[ "$PARAMETER" =~ ^(edit|EDIT|Edit)$ ]]; then
+   EDIT=1
+   echo "Editing existing backport ..."
+elif [[ ! "$PARAMETER" =~ ^(v4.0|v3.6|v3.4)$ ]]; then
+   echo -e "\nERROR: Invalid backport version provided."
+   echo -e "       Must be one of: v4.0, v3.6, v3.4"
+   echo -e "       This script only supports one backport at a time."
+   echo -e "       Exiting ...\n"
+   exit;
+else
+   TARGETVERS=$PARAMETER
+fi
+
+# Determine BRANCHNAME:
+BRANCHNAME=`git rev-parse --abbrev-ref HEAD 2>&1`
+
+## Exit if not in a valid git repo:
+if [ `echo $BRANCHNAME | grep -c '^fatal: not a git repository'` -gt 0 ]; then
+   echo -e "\nERROR: Not in a git repo!"
+   echo -e "       Aborting...\n"
+   exit;
+fi
+
+## IF RESUMING OR EDITING:
+if [[ ! -z $RESUME || ! -z $EDIT ]]; then
+
+   TARGETVERS=`git rev-parse --abbrev-ref --symbolic-full-name @{u} | awk -F'/' '{print $2}'`
+
+   ## Get exiting GIT_EDITOR, to restore later:
+   OLD_GIT_EDITOR=`echo $GIT_EDITOR`
+
+   ## Set custom giteditor_autoamend as GIT_EDITOR:
+   export GIT_EDITOR=giteditor_autoamend
+
+   git status
+   git add source/*
+
+   if [ ! -z $RESUME ]; then
+      # Performing a $RESUME:
+      git cherry-pick --continue
+   else
+      # Must be an $EDIT then:
+      git commit --amend
+   fi
+
+   git pull --rebase
+   git push -f origin $BRANCHNAME
+
+   # Build URL:
+   PR_URL="https://github.com/mongodb/docs/compare/$TARGETVERS...andf-mongodb:$BRANCHNAME?expand=1"
+
+   # Provide links (clickable in VS Code and iTerm2):
+   echo -e "\n##############################  BACKPORT READY!  #############################"
+   echo -e "\n      PULL REQUEST: $PR_URL"
+   echo -e "\n##############################################################################\n"
+
+   # Replace GIT_EDITOR with original value:
+   GIT_EDITOR=`echo $OLD_GIT_EDITOR`
+
+   rm -f $TMPFILE
+   exit;
+fi
+
+## IF NOT RESUMING OR EDITING:
+if [ `echo $BRANCHNAME | awk -F\- '{print NF-1}'` -lt 2 ]; then
+   echo -e "\nERROR: You must be in your working branch to backport."
+   echo -e "       NOT in master or previous version branches."
+   echo -e "       Exiting ...\n"
+   exit;
+fi
+
+## Determine commit to backport. Only handles one at a time:
+JIRA=`echo $BRANCHNAME | awk -F\- '{print $1"-"$2}'`
+COMMIT_LINE=`git log --pretty=format:'%h | %s %d' | grep $JIRA`
+COMMIT=`echo $COMMIT_LINE | awk -F' | ' {'print $1'}`
+
+if [ -z $COMMIT ]; then
+   echo -e "\nERROR: Could not determine commit to backport!"
+   echo -e "       You must have committed your fix in order to backport"
+   echo -e "       Aborting...\n"
+   exit;
+fi
+
+## Perform work:
+git checkout -b $TARGETVERS-$JIRA upstream/$TARGETVERS
+git pull --rebase
+git cherry-pick $COMMIT 2>&1 | tee $TMPFILE 2>&1 > /dev/null
+
+## Determine if there is a conflict:
+if [ `grep -c 'error: could not apply' $TMPFILE` -gt 0 ]; then
+   echo -e "\nALERT: CONFLICTS DETECTED"
+   echo -e "       You must now manually correct conflicts."
+   echo -e "       When ready, use 'backport resume' to return to this step."
+   echo -e "       Exiting...\n"
+   rm -f $TMPFILE
+   exit;
+else
+   echo -e "\nNo conflicts detected! Huzzah!"
+   echo -e "       Continuing ..."
+fi
+
+git pull --rebase
+git push -f origin $TARGETVERS-$JIRA
+
+# Build URL:
+PR_URL="https://github.com/mongodb/docs/compare/$TARGETVERS...andf-mongodb:$TARGETVERS-$JIRA?expand=1"
+
+# Provide links (clickable in VS Code and iTerm2):
+echo -e "\n##############################  BACKPORT READY!  #############################"
+echo -e "\n      PULL REQUEST: $PR_URL"
+echo -e "\n##############################################################################\n"
+
+rm -f $TMPFILE
