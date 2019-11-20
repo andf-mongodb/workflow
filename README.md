@@ -26,9 +26,10 @@ _Usage:_ `push` from within the git repo you wish to publish.
 ## backport
 Once your changes have been committed, optionally backport to previous branches if applicable. Allows for manual confliuct resolution and then resuming, and allows for editing of PRs if they haven't been completed yet.
 
-_Usage:_ `backport v4.0` after having commited the change you wish to backport, from within the branch you made the change in.
-         `backport resume` to issue `git cherry-pick --continue` after a manual conflict resolution and continue to the PR.
-         `backport edit` to edit an existing PR that hasn't been completed yet.
+_Usage:_ 
+- `backport v4.0` after having commited the change you wish to backport, from within the branch you made the change in.
+- `backport resume` to issue `git cherry-pick --continue` after a manual conflict resolution and continue to the PR.
+- `backport edit` to edit an existing PR that hasn't been completed yet.
 
 # Supporting Tools
 Contains a collection of small support scripts.
