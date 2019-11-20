@@ -59,7 +59,7 @@ Updates your forked copy of MDB docs with the latest from upstream.
 
    - CR is returned with LGTM: `push` from within VSCode terminal to create PR
 
-   - CR comes back with feedback. Make changes, and then return to step 2-3-4-5 (edit - `stage` - `review`).
+   - CR comes back with feedback. Repeat steps 4-5 (edit - `stage` - `review`).
 
 7. If necessary (as often is), backport to previous version(s) with `backport v4.0` (and `backport v3.6` and `backport v3.4`)
 
