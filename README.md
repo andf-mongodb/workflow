@@ -63,8 +63,5 @@ Updates your forked copy of MDB docs with the latest from upstream.
 
 7. If necessary (as often is), backport to previous version(s) with `backport v4.0` (and `backport v3.6` and `backport v3.4`)
 
+
 Occassionally, run `rebasefork` and `cleanspace`
-
-# Future plans
-Working on a backporting tool for Tony...
-
