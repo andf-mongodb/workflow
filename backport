@@ -129,16 +129,19 @@ if [[ ! -z $RESUME || ! -z $EDIT ]]; then
    exit;
 fi
 
-## IF NOT RESUMING OR EDITING:
-if [ `echo $BRANCHNAME | awk -F\- '{print NF-1}'` -lt 2 ]; then
-   echo -e "\nERROR: You must be in your working branch to backport."
-   echo -e "       NOT in master or previous version branches."
-   echo -e "       Exiting ...\n"
-   exit;
+## IF NOT RESUMING OR EDITING, check current branch:
+## - If branch does not start with $JIRA, likely in different backport branch
+##   (like v4.0, etc). Switch to parent branch containing original commit
+## - If branch does start with $JIRA, continue as normal.
+if [[ `echo $BRANCHNAME | awk -F\- '{print $1}'` =~ ^(v4.0|v3.6|v3.4)$ ]]; then
+   SWITCHTO_JIRA=`echo $BRANCHNAME | awk -F\- '{print $2"-"$3}'`
+   SWITCHTO_BRANCH=`git for-each-ref refs/heads | cut -d/ -f3- | grep ^$SWITCHTO_JIRA`
+   git checkout $SWITCHTO_BRANCH
+   BRANCHNAME=$SWITCHTO_BRANCH
 fi
 
 ## Determine commit to backport. Only handles one at a time:
-JIRA=`echo $BRANCHNAME | awk -F\- '{print $2"-"$3}'`
+JIRA=`echo $BRANCHNAME | awk -F\- '{print $1"-"$2}'`
 COMMIT_LINE=`git log --pretty=format:'%h | %s %d' | grep $JIRA`
 COMMIT=`echo $COMMIT_LINE | awk -F' | ' {'print $1'}`
 
