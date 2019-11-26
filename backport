@@ -12,8 +12,8 @@
 ## - Must be called from within a git repo
 ## - Must have committed the change you wish
 ##   to backport
-## - Must be in the appropriate branch, and
-##   NOT in master, or a previous version branch
+## - Must be in the appropriate branch, or one of its
+##   backport branchs as created by this program
 
 ## Supports the following usage:
 ##
