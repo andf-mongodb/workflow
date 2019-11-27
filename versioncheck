@@ -1,8 +1,8 @@
 #!/bin/bash
 
-## Examine a docs repo for versionchanged:: tags
-## and reports those that are older than the user-
-## provided version.
+## Examine a docs repo for versionchanged:: and
+## versionadded:: tags, and reports those that are
+## older than the user-specified version.
 ##
 ## Requires a version parameter in the form 'v4.2'
 ## or '4.2'. Does not accept minor revisions such as
@@ -33,7 +33,9 @@ elif [ ! -z $2 ]; then
    exit;
 fi
 
-## Collect user input, remove 'v' from, say, 'v4.2', validate for version-like float:
+## Collect user input, remove 'v' from version if present,
+## and validate for version-like float (also rejects minor
+## revisions if included: comparison requires float):
 TARGET_VERS=`echo $PARAMETER | sed 's%v%%g'`
 VALID_INPUT=`echo $TARGET_VERS | egrep -c '^[0-9]\.[0-9]{1,2}$'`
 
@@ -58,7 +60,7 @@ fi
 
 ## Assemble initial list of files that include a
 ## "versionchanged::" directive into our $TMPFILE:
-grep -Ri "versionchanged::" $GITROOT/source/* > $TMPFILE
+egrep -Ri '(versionchanged::|versionadded::)' $GITROOT/source/* > $TMPFILE
 
 ## Set field separator:
 IFS="
