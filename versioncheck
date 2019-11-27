@@ -1,0 +1,95 @@
+#!/bin/bash
+
+## Examine a docs repo for versionchanged:: tags
+## and reports those that are older than the user-
+## provided version.
+##
+## Requires a version parameter in the form 'v4.2'
+## or '4.2'. Does not accept minor revisions such as
+## 'v4.2.1' or '4.2.1'. Must be run within the git
+## repo you wish to check. Prints a list to STDOUT
+## showing versions encountered previous to provided
+## parameter, and the filepaths where found.
+
+############################################################
+## BEGIN SCRIPT ##
+##################
+
+TMPFILE=/tmp/check_versionchanged$$.tmp
+
+## Check for provided parameter:
+PARAMETER=$1
+
+# Parse user-provided parameter and determine what to do:
+if [ -z $PARAMETER ]; then
+   echo -e "\nERROR: No parameter provided!"
+   echo -e "       You must provide a valid supported version like 4.2, 4.0, 3.6, etc"
+   echo -e "       Exiting ...\n"
+   exit;
+elif [ ! -z $2 ]; then
+   echo -e "\nERROR: Too many parameters provided!"
+   echo -e "       Must be ONE valid supported version like 4.2, 4.0, 3.6, etc"
+   echo -e "       Exiting ...\n"
+   exit;
+fi
+
+## Collect user input, remove 'v' from, say, 'v4.2', validate for version-like float:
+TARGET_VERS=`echo $PARAMETER | sed 's%v%%g'`
+VALID_INPUT=`echo $TARGET_VERS | egrep -c '^[0-9]\.[0-9]{1,2}$'`
+
+## Exit if invalid version parameter is detected:
+if [ $VALID_INPUT -eq 0 ]; then
+   echo -e "\nERROR: Invalid version provided!"
+   echo -e "       Must be a valid supported version like 4.2, 4.0, 3.6, etc"
+   echo -e "       Do not include the minor revision. This script only"
+   echo -e "          supports major versions for comparison, but will"
+   echo -e "          show minor versions as found in the code."
+   echo -e "       Exiting ...\n"
+   exit;
+fi
+
+## Exit if not in a valid git repo:
+GITROOT=`git rev-parse --show-toplevel 2>&1`
+if [ `echo $GITROOT | grep -c '^fatal: not a git repository'` -gt 0 ]; then
+   echo -e "\nERROR: Not in a git repo!"
+   echo -e "       Aborting...\n"
+   exit;
+fi
+
+## Assemble initial list of files that include a
+## "versionchanged::" directive into our $TMPFILE:
+grep -Ri "versionchanged::" $GITROOT/source/* > $TMPFILE
+
+## Set field separator:
+IFS="
+"
+
+## Loop through results, separate the important bits, and
+## only return versions we wish to take action on
+## (i.e. $FOUND < $VERS):
+for LINE in `cat $TMPFILE`; do
+
+    ## Isolate the version number, do some cleaning (version number matching,
+    ## match only first instance found, remove trailing decimal point):
+    FOUND_VERS=`echo $LINE | awk -F'\:\:' '{print $2}' | egrep -m 1 -o '[0-9]\.[0-9]{1,2}\.{0,1}[0-9]{0,2}' | head -1 | sed 's%\.$%%g'`
+
+    ## Reduce to only one decimal point for performing our float comparison:
+    FOUND_VERS_TRUNC=`echo $FOUND_VERS | awk -F'.' '{print $1"."$2}'`
+
+    ## Isolate the filepath that contains the versionchanged tag
+    ## with relative pathing from source/ (supported by VS Code for clickability):
+    FOUND_FILE=`echo $LINE | sed 's%.*/source/%source/%g' | awk -F':' '{print $1}'`
+
+    ## If the version is PREVIOUS to the version we supplied, include it
+    ## in the final output:
+    if [[ $(echo "$FOUND_VERS_TRUNC < $TARGET_VERS" | bc -l) -eq 1 ]]; then
+       echo -e "$FOUND_VERS\t$FOUND_FILE" >> $TMPFILE.2
+    fi
+
+done
+
+## Print out sorted results to the user:
+cat $TMPFILE.2 | sort -n -k1,1
+
+## Clean up both $TMPFILES:
+rm -rf $TMPFILE*
