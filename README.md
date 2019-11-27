@@ -44,7 +44,7 @@ Clear out all build directories from all local git repos
 Updates your forked copy of MDB docs with the latest from upstream.
 
 ## versioncheck
-Checks through a docs corpus for `versionchanged::` tags and lists those files that include such tags older than the user-provided version. Usage: `versioncheck v3.4`
+Checks through a docs corpus for `versionchanged::` and `versionadded::` tags and lists those files that include such tags older than the user-provided version. Usage: `versioncheck v3.4`
 
 # Example workflow usage, using these tools:
 
