@@ -24,7 +24,7 @@ Once LGTM has been obtained, submits the code as-is to Git Hub, and provides lin
 _Usage:_ `push` from within the git repo you wish to publish.
 
 ## backport
-Once your changes have been committed, optionally backport to previous branches if applicable. Allows for manual confliuct resolution and then resuming, and allows for editing of PRs if they haven't been completed yet.
+Once your changes have been committed, optionally backport to previous branches (like v4.0) if applicable. Can also backport to specific, unpublished minor revisions (like v4.0.14). Allows for manual conflict resolution and then resuming, and allows for editing of existing PRs if they haven't been completed yet. Checks for missed conflict resolutions during resume as well.
 
 _Usage:_ 
 - `backport v4.0` after having commited the change you wish to backport, from within the branch you made the change in.
