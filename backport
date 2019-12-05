@@ -17,10 +17,13 @@
 
 ## Supports the following usage:
 ##
-## backport <v4.0|v3.6|v3.4>
-##     backports commit where commit message contains
-##     the jira ticket that starts your current branch-
-##     name to the version specified. Only accepts ONE.
+## backport <version>
+##     backports commit to specified major version, like:
+##         v4.0, v3.6, v3.2
+##     or minor revison if to future branches, like:
+##         v4.0.14, v3.6.16, v3.4.24
+##     where commit message contains the jira ticket that
+##     starts your current branchname. Only accepts ONE.
 ## backport resume
 ##     if previous invocation of this utility met with
 ##     a conflict in the cherry-pick stage, and you have
@@ -51,14 +54,16 @@ PARAMETER=$1
 # Parse user-provided parameter and determine what to do:
 if [ -z $PARAMETER ]; then
    echo -e "\nERROR: No parameter provided. You must provide one of:"
-   echo -e "     - <vers>: ONE of v4.0, v3.6, v3.4"
+   echo -e "     - <vers>: ONE of major version like: v4.0, v3.6, v3.4"
+   echo -e "               or minor revision like: v4.0.14, v3.6.16, v3.4.24" 
    echo -e "     - resume: to resume an in-progress backport"
    echo -e "     - edit: to edit an already pushed backport"
    echo -e "       Exiting ...\n"
    exit;
 elif [ ! -z $2 ]; then
    echo -e "\nERROR: Too many parameters provided. You must provide one of:"
-   echo -e "     - <vers>: ONE of v4.0, v3.6, v3.4"
+   echo -e "     - <vers>: ONE of major version like: v4.0, v3.6, v3.4"
+   echo -e "               or minor revision like: v4.0.14, v3.6.16, v3.4.24"
    echo -e "     - resume: to resume an in-progress backport"
    echo -e "     - edit: to edit an already pushed backport"
    echo -e "       Exiting ...\n"
@@ -69,9 +74,10 @@ elif [[ "$PARAMETER" =~ ^(resume|RESUME|Resume)$ ]]; then
 elif [[ "$PARAMETER" =~ ^(edit|EDIT|Edit)$ ]]; then
    EDIT=1
    echo "Editing existing backport ..."
-elif [[ ! "$PARAMETER" =~ ^(v4.0|v3.6|v3.4)$ ]]; then
+elif [ `echo $PARAMETER | sed 's%^v%%g' | egrep -c '^[0-9]\.[0-9]{1,2}\.{0,1}[0-9]{0,2}$'` -lt 1 ]; then
    echo -e "\nERROR: Invalid backport version provided."
-   echo -e "       Must be one of: v4.0, v3.6, v3.4"
+   echo -e "       Must be ONE of major version like: v4.0, v3.6, v3.4"
+   echo -e "       or minor revision like: v4.0.14, v3.6.16, v3.4.24"
    echo -e "       This script only supports one backport at a time."
    echo -e "       Exiting ...\n"
    exit;
@@ -92,6 +98,8 @@ fi
 ## IF RESUMING OR EDITING:
 if [[ ! -z $RESUME || ! -z $EDIT ]]; then
 
+   # We no longer have a user-provided $PARAMETER,
+   # but can now determine $TARGETVERS directly via git:
    TARGETVERS=`git rev-parse --abbrev-ref --symbolic-full-name @{u} | awk -F'/' '{print $2}'`
 
    ## Get exiting GIT_EDITOR, to restore later:
@@ -133,7 +141,7 @@ fi
 ## - If branch does not start with $JIRA, likely in different backport branch
 ##   (like v4.0, etc). Switch to parent branch containing original commit
 ## - If branch does start with $JIRA, continue as normal.
-if [[ `echo $BRANCHNAME | awk -F\- '{print $1}'` =~ ^(v4.0|v3.6|v3.4)$ ]]; then
+if [ `echo $BRANCHNAME | awk -F\- '{print $1}' | sed 's%^v%%g' | egrep -c '^[0-9]\.[0-9]{1,2}\.{0,1}[0-9]{0,2}$'` -eq 1 ]; then
    SWITCHTO_JIRA=`echo $BRANCHNAME | awk -F\- '{print $2"-"$3}'`
    SWITCHTO_BRANCH=`git for-each-ref refs/heads | cut -d/ -f3- | grep ^$SWITCHTO_JIRA`
    git checkout $SWITCHTO_BRANCH
