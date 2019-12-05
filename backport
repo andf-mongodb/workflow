@@ -98,8 +98,21 @@ fi
 ## IF RESUMING OR EDITING:
 if [[ ! -z $RESUME || ! -z $EDIT ]]; then
 
-   # We no longer have a user-provided $PARAMETER,
-   # but can now determine $TARGETVERS directly via git:
+   ## Sanity check: did we forget to resolve any conflicts?
+   grep -R '<<<<<<< HEAD' source/* | awk -F':' '{print $1}' | sort -u > $TMPFILE.missed
+
+   ## If so, notify the user and abort!
+   if [ -s $TMPFILE.missed ]; then
+      echo -e "\nWARNING: Conflicts still detected in the following file(s):\n"
+      echo -e "#############################################################"
+      cat $TMPFILE.missed
+      echo -e "#############################################################"
+      echo -e "\nAborting...\n"
+      exit;
+   fi
+
+   ## We no longer have a user-provided $PARAMETER,
+   ## but can now determine $TARGETVERS directly via git:
    TARGETVERS=`git rev-parse --abbrev-ref --symbolic-full-name @{u} | awk -F'/' '{print $2}'`
 
    ## Get exiting GIT_EDITOR, to restore later:
@@ -133,7 +146,7 @@ if [[ ! -z $RESUME || ! -z $EDIT ]]; then
    # Replace GIT_EDITOR with original value:
    GIT_EDITOR=`echo $OLD_GIT_EDITOR`
 
-   rm -f $TMPFILE
+   rm -f $TMPFILE.*
    exit;
 fi
 
@@ -171,7 +184,7 @@ if [ `grep -c 'error: could not apply' $TMPFILE` -gt 0 ]; then
    echo -e "       You must now manually correct conflicts."
    echo -e "       When ready, use 'backport resume' to return to this step."
    echo -e "       Exiting...\n"
-   rm -f $TMPFILE
+   rm -f $TMPFILE.*
    exit;
 else
    echo -e "\nNo conflicts detected! Huzzah!"
@@ -189,4 +202,4 @@ echo -e "\n##############################  BACKPORT READY!  ####################
 echo -e "\n      PULL REQUEST: $PR_URL"
 echo -e "\n##############################################################################\n"
 
-rm -f $TMPFILE
+rm -f $TMPFILE.*
