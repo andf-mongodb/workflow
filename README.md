@@ -19,7 +19,7 @@ Commits your changes to git, and submits for code review using the MDB internal 
 _Usage:_ `review` from within the git repo you wish to submit.
 
 ## push
-Once LGTM has been obtained, submits the code as-is to Git Hub, and provides links to the next three web-based steps (PR in GitHub, Close JIRA, close CR)
+Once LGTM has been obtained, submits the code as-is to Git Hub, and provides links to the next three web-based steps (PR in GitHub, Close JIRA, close CR). Also supports force-pushing with the `-f` flag.
 
 _Usage:_ `push` from within the git repo you wish to publish.
 
