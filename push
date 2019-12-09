@@ -23,6 +23,24 @@ WORKFLOW_STATUS_DIR=$WORKSPACE/workflow
 ## BEGIN SCRIPT ##
 ##################
 
+FORCE=""
+
+## Check for FORCE override: for force pushing if you know
+## what you're doing:
+while getopts ":f" opt; do
+  case ${opt} in
+    f )
+      FORCE=1
+      ;;
+    \? )
+      echo -e "\nERROR: Invalid option: $OPTARG" 1>&2
+      echo "       push only supports the optional -f flag"
+      echo -e "       for force pushing\n"
+      exit
+      ;;
+  esac
+done
+
 # Must be in a git repo:
 BRANCH=`git rev-parse --abbrev-ref HEAD`
 if [ `echo $BRANCH | grep -c '^fatal: not a git repository'` -gt 0 ]; then
@@ -50,9 +68,13 @@ elif [ `echo $BRANCH | egrep -c '(^DOCS-|^DOCSP-)'` -lt 1 ]; then
    exit;
 fi
 
-# Push to GitHub:
+# Push to GitHub, force-pushing if requested:
 git pull --rebase
-git push origin $BRANCH
+if [ ! $FORCE ]; then
+   git push origin $BRANCH
+else
+   git push -f origin $BRANCH
+fi
 
 # Build URLs:
 GITHUB_URL="https://github.com/$GITUSER/docs/pull/new/$BRANCH"
