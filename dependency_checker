@@ -188,8 +188,8 @@ for EDITION_SWITCH in `seq 0 1`; do
                       curl -O -# $URL
                       FILENAME=`echo $URL | sed s%^.*binary-amd64/%%g`
 
-                      ## List all dependencies:
-                      dpkg -I $FILENAME | grep Depends | sed 's%Depends: %%g' | sed 's%,%\n%g'
+                      ## List dependencies, skipping safe to assumes:
+                      dpkg -I $FILENAME | grep Depends | sed 's%Depends: %%g' | sed 's%,%\n%g' | egrep -v '(adduser|tzdata)'
 
                       ## Clean up DEB:
                       rm -f $FILENAME
