@@ -1,0 +1,206 @@
+#!/bin/bash
+
+## Downloads MDB install packages appropriate for the platform
+## running this script, and determines dependencies required.
+
+TMPSPACE=/tmp/dependency_tester$$
+
+mkdir $TMPSPACE
+CURRENTDIRR=`pwd`
+cd $TMPSPACE
+
+## Detect platform:
+PLATFORM=`hostnamectl | grep Operating | awk -F":" '{print $2}'`
+
+## Determine package type to use, based on platform:
+if [ `echo $PLATFORM | egrep -ic '(centos|redhat|amazon|suse)'` -gt 0 ]; then
+   PKG_TYPE="rpm"
+elif [ `echo $PLATFORM | egrep -ic '(ubuntu|debian)'` -gt 0 ]; then
+   PKG_TYPE="deb"
+else
+   echo "ERROR: Unable to determine platform type (rpm or deb)! (??)"
+   exit;
+fi
+
+## Check for curl:
+if [ `command -v curl | grep -ic curl` -ne 1 ]; then
+   echo "Please install curl to use this program"
+   echo "Exiting ..."
+   exit;
+fi
+
+
+## Provide bash arrays of what to download / check for.
+## Separate multiple values with a single space.
+
+## MongoDB versions to download. Must be full release version. Should be latest:
+MDB_VERS=(4.2.2 4.0.14 3.6.16)
+## RPM-based platforms to check:
+RPM_PLATFORMS=(redhat amazon suse)
+## DEB-based platforms to check:
+DEB_PLATFORMS=(debian ubuntu)
+## RHEL versions to check:
+RHEL_VERS=(6 7 8)
+## Amazon Linux versions to check. Must use 2013.03 intead of "1":
+AMZN_VERS=(2013.03 2)
+## Debian versions to check. Must use codenames:
+DEBIAN_VERS=(buster stretch jessie)
+## Ubuntu versions to check. Must use codenames:
+UBUNTU_VERS=(bionic xenial trusty)
+## SUSE versions to check:
+SUSE_VERS=(12 15)
+
+## For each edition, build out URLS that we'll be using to download and check.
+## A series of for loops generates the unique URLs for both MDB editions for
+## all supported platforms that use the same package format (RMP or DEB) as
+## the system running this script.
+
+## Loop twice, once per edition:
+for EDITION_SWITCH in `seq 0 1`; do
+    if [ $EDITION_SWITCH -eq 0 ]; then
+       EDITION="Community"
+       URL_BASE="https://repo.mongodb.org"
+       EDITION_NAME="mongodb-org"
+    else
+       EDITION="Enterprise"
+       URL_BASE="https://repo.mongodb.com"
+       EDITION_NAME="mongodb-enterprise"
+    fi
+
+    ## If we are running on an RPM-based distro, check all RPMs
+    if [ $PKG_TYPE == "rpm" ]; then
+
+       ## Loop per supported RPM Platform:
+       for PLATFORM_NAME in "${RPM_PLATFORMS[@]}"; do
+           if [ $PLATFORM_NAME == "redhat" ]; then
+              PKG_MGR="yum"
+              BUILD="el"
+              PLATFORM_VERS=("${RHEL_VERS[@]}")
+       	   elif [ $PLATFORM_NAME == "amazon" ]; then
+       	      PKG_MGR="yum"
+              BUILD="amzn"
+              PLATFORM_VERS=("${AMZN_VERS[@]}")
+       	   elif [ $PLATFORM_NAME == "suse" ]; then
+       	      PKG_MGR="zypper"
+              BUILD="suse"
+              PLATFORM_VERS=("${SUSE_VERS[@]}")
+           fi
+
+           ## Loop per supported version of that platform:
+           for PLATFORM_VER in "${PLATFORM_VERS[@]}"; do
+
+               ## Loop per MongoDB version:
+               for MDB_VER in "${MDB_VERS[@]}"; do
+
+                   ## Determine MongoDB branch from provided version (i.e. 4.2 from 4.2.2):
+                   MDB_BRANCH=`echo $MDB_VER | egrep -m 1 -o '^[0-9]\.[0-9]{1,2}'`
+
+       	       	   ## Assemble URL from all the components we've assembled thus far:
+                   ## ... but AMZN just has to be different:
+                   if [[ $PLATFORM_NAME == "amazon" && $PLATFORM_VER == "2013.03" ]]; then
+                      URL="$URL_BASE/$PKG_MGR/$PLATFORM_NAME/$PLATFORM_VER/$EDITION_NAME/$MDB_BRANCH/x86_64/RPMS/$EDITION_NAME-server-"$MDB_VER"-1.amzn1.x86_64.$PKG_TYPE"
+                   else
+                      URL="$URL_BASE/$PKG_MGR/$PLATFORM_NAME/$PLATFORM_VER/$EDITION_NAME/$MDB_BRANCH/x86_64/RPMS/$EDITION_NAME-server-"$MDB_VER"-1.$BUILD$PLATFORM_VER.x86_64.$PKG_TYPE"
+                   fi
+
+                   ## Check to make sure a PKG exists for the given version / platform combination:
+                   STATUS=`curl -s -I $URL | head -n 1 | cut -d$' ' -f2`
+                   if [ ! $STATUS == "200" ]; then
+                      echo -e "\nNo $PKG_TYPE available for MongoDB $MDB_VER $EDITION Edition on $PLATFORM_NAME $PLATFORM_VER"
+                      echo "Skipping ..."
+                   else
+                      echo -e "\nDownloading $PKG_TYPE for MongoDB $MDB_VER $EDITION Edition on $PLATFORM_NAME $PLATFORM_VER"
+                      curl -O -# $URL
+                      FILENAME=`echo $URL | sed s%^.*RPMS/%%g`
+
+                      ## List all dependencies, remove shells & tzdata,
+                      ## and write to file for later processing::
+                      rpm -qpR $FILENAME | egrep -v '(/bin/sh|/bin/bash|tzdata)' > $TMPSPACE/$FILENAME.deplist
+
+                      ## Set bash field separator to newline:
+                      IFS=$'\n'
+
+                      ## Loop over each dep in the deplist file.
+                      ## If a package is part of the GCC or GLIBC
+                      ## packages, add them to an exlude list for later:
+                      for line in `cat $TMPSPACE/$FILENAME.deplist`; do
+                          if [ `echo $line | egrep -ic '(GLIBC|GCC|GNU_HASH)'` -gt 0 ]; then
+                             FOUND_PKG=`echo $line | cut -d'(' -f1`
+                             echo $FOUND_PKG >> $TMPSPACE/$FILENAME.excludelist
+                          fi
+                      done
+
+                      ## Print dependencies minus excludelist:
+                      grep -v -f $TMPSPACE/$FILENAME.excludelist $TMPSPACE/$FILENAME.deplist
+
+                      ## Cleanup:
+                      rm -f $TMPSPACE/$FILENAME.deplist
+                      rm -f $TMPSPACE/$FILENAME.excludelist
+
+                      ## NOTE: If running this directly on the same platform
+                      ## as RPM was built for (i.e. run on RHEL8 to check RHEL8 RPMs),
+                      ## the following would be better, as it provides the upstream
+                      ## packages that would satisfy the listed dependencies as well:
+                      ## yum deplist $FILENAME | grep provider | awk -F":" '{print $2}' | sort -u
+
+                      ## Clean up RPM:
+                      rm -f $FILENAME
+                   fi
+
+               done
+           done
+       done
+
+    ## If we are running on a DEB-based distro, check all DEBs
+    elif [ $PKG_TYPE == "deb" ]; then
+
+       ## Loop per supported DEB Platform:
+       for PLATFORM_NAME in "${DEB_PLATFORMS[@]}"; do
+           if [ $PLATFORM_NAME == "debian" ]; then
+              PKG_MGR="apt"
+              RELEASE="main"
+              PLATFORM_VERS=("${DEBIAN_VERS[@]}")
+           elif [ $PLATFORM_NAME == "ubuntu" ]; then
+              PKG_MGR="apt"
+              RELEASE="multiverse"
+              PLATFORM_VERS=("${UBUNTU_VERS[@]}")
+           fi
+
+           ## Loop per supported version of that platform:
+           for PLATFORM_VER in "${PLATFORM_VERS[@]}"; do
+
+               ## Loop per MongoDB version:
+               for MDB_VER in "${MDB_VERS[@]}"; do
+
+       	       	   ## Determine MongoDB branch from provided version (i.e. 4.2 from 4.2.2):
+                   MDB_BRANCH=`echo $MDB_VER | egrep -m 1 -o '^[0-9]\.[0-9]{1,2}'`
+
+                   ## Assemble URL from all the components we've assembled thus far:
+                   URL="$URL_BASE/$PKG_MGR/$PLATFORM_NAME/dists/$PLATFORM_VER/$EDITION_NAME/$MDB_BRANCH/$RELEASE/binary-amd64/$EDITION_NAME-server_"$MDB_VER"_amd64.$PKG_TYPE"
+
+                   ## Check to make sure a PKG exists for the given version / platform combination:
+                   STATUS=`curl -s -I $URL | head -n 1 | cut -d$' ' -f2`
+                   if [ ! $STATUS == "200" ]; then
+                      echo -e "\nNo $PKG_TYPE available for MongoDB $MDB_VER $EDITION Edition on $PLATFORM_NAME $PLATFORM_VER"
+                      echo "Skipping ..."
+                   else
+                      echo -e "\nDownloading $PKG_TYPE for MongoDB $MDB_VER $EDITION Edition on $PLATFORM_NAME $PLATFORM_VER"
+                      curl -O -# $URL
+                      FILENAME=`echo $URL | sed s%^.*binary-amd64/%%g`
+
+                      ## List all dependencies:
+                      dpkg -I $FILENAME | grep Depends | sed 's%Depends: %%g' | sed 's%,%\n%g'
+
+                      ## Clean up DEB:
+                      rm -f $FILENAME
+                   fi
+
+               done
+           done
+       done
+
+    fi
+done
+
+cd $CURRENTDIR
+rm -rf $TMPSPACE
