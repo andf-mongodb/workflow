@@ -113,9 +113,10 @@ for EDITION_SWITCH in `seq 0 1`; do
                       curl -O -# $URL
                       FILENAME=`echo $URL | sed s%^.*RPMS/%%g`
 
-                      ## List all dependencies, remove shells & tzdata,
-                      ## and write to file for later processing::
-                      rpm -qpR $FILENAME | egrep -v '(/bin/sh|/bin/bash|tzdata)' > $TMPSPACE/$FILENAME.deplist
+                      ## List all dependencies, remove shells, tzdata,
+                      ## rpm tools, and MDB deps, and write to file
+                      ## for later processing:
+                      rpm -qpR $FILENAME | egrep -v '(/bin/sh|/bin/bash|tzdata|timezone|rpmlib|librpm|python|mongodb)' > $TMPSPACE/$FILENAME.deplist
 
                       ## Set bash field separator to newline:
                       IFS=$'\n'
