@@ -6,7 +6,7 @@
 TMPSPACE=/tmp/dependency_tester$$
 
 mkdir $TMPSPACE
-CURRENTDIRR=`pwd`
+CURRENTDIR=`pwd`
 cd $TMPSPACE
 
 ## Detect platform:
