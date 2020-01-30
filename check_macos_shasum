@@ -1,6 +1,6 @@
 #!/bin/bash
 
-## Tiny script to download the latest MDB TGXZ for macOS
+## Tiny script to download the latest MDB TGZ for macOS
 ## and spit out the shasum, for use in updating the
 ## brew formula each new MDB version
 
