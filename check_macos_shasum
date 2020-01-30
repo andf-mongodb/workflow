@@ -1,0 +1,64 @@
+#!/bin/bash
+
+## Tiny script to download the latest MDB TGXZ for macOS
+## and spit out the shasum, for use in updating the
+## brew formula each new MDB version
+
+## Requires the version of MDB you wish to download and
+## compute the SHA for as a parameter.
+
+TMPSPACE=/tmp/check_macos_shasum$$
+
+## Check for provided parameter:
+PARAMETER=$1
+
+## Parse user-provided parameter and determine what to do:
+if [[ -z $PARAMETER || ! -z $2 ]]; then
+   echo -e "\nERROR: Either no or 2+ parameters provided. You must provide ONE"
+   echo -e "     MDB version like: v4.2.3, v4.0.14, etc"
+   echo -e "     Exiting ...\n"
+   exit;
+elif [ `echo $PARAMETER | sed 's%^v%%g' | egrep -c '^[0-9]\.[0-9]\.[0-9]{1,2}$'` -lt 1 ]; then
+   echo -e "\nERROR: Invalid MDB  version provided."
+   echo -e "       Must be ONE MDB version like: v4.2.3, v4.0.14, etc"
+   echo -e "       Exiting ...\n"
+   exit;
+else
+   VERS=`echo $PARAMETER | sed 's%^v%%g'`
+fi
+
+## Compute branch for float comparison:
+VERS_BRANCH=`echo $VERS | awk -F'.' '{print $1"."$2}'`
+
+## MDB v4.2 changed filename. Use appropriate URL and FILENAME:
+if [[ $(echo "$VERS_BRANCH < 4.2" | bc -l) -eq 1 ]]; then
+   URL="https://fastdl.mongodb.org/osx/mongodb-osx-ssl-x86_64-$VERS.tgz"
+   FILENAME="mongodb-osx-ssl-x86_64-$VERS.tgz"
+else
+   URL="https://fastdl.mongodb.org/osx/mongodb-macos-x86_64-$VERS.tgz"
+   FILENAME="mongodb-macos-x86_64-$VERS.tgz"
+fi
+
+## Check if download is available for this version:
+STATUS=`curl -s -I $URL | head -n 1 | cut -d$' ' -f2`
+
+## If no download available for this version:
+if [ ! $STATUS == "200" ]; then
+   echo -e "\nNo macOS TGZ for $VERS found."
+   echo "Exiting ..."
+## If available, download, compute SHASHUM, and delete:
+else
+   mkdir -p $TMPSPACE
+   CURRENTDIR=`pwd`
+   cd $TMPSPACE
+   echo -e "\nDownloading the macOS TGZ for MDB $VERS ..."
+   cd $TMPSPACE
+   curl -O -# $URL
+   SHASUM=`shasum -a 256 $FILENAME | awk '{print $1}'`
+   echo -e "\n   SHASUM = $SHASUM"
+   echo -e "\n###############################################################################\n"
+   cd $CURRENTDIR
+   rm -rf $TMPSPACE
+fi
+
+exit
