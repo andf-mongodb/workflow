@@ -10,7 +10,7 @@
 #################
 
 ## Your github username:
-GITUSER=your_git_user
+GITUSER=andf-mongodb
 
 ## Your docs workspace (i.e. where to git clone to)
 ## If you use a ~ in the path, don't quote the value:
@@ -28,9 +28,12 @@ UPSTREAM_BRANCH="master"
 
 ## Check for UPSTREAM_BRANCH override: for publishing directly
 ## to future release branches, like v4.2.1:
-while getopts ":b:" opt; do
+while getopts ":b:v:" opt; do
   case ${opt} in
     b )
+      UPSTREAM_BRANCH=$OPTARG
+      ;;
+    v )
       UPSTREAM_BRANCH=$OPTARG
       ;;
     \? )
@@ -45,6 +48,19 @@ shift $((OPTIND -1))
 
 ## Collect intended branchname from provided parameter:
 BRANCHNAME=$1
+
+## If $UPSTREAM_BRANCH does not begin with a 'v' character, add it:
+if [ `echo $UPSTREAM_BRANCH | grep -c '^v.*'` -lt 1 ]; then
+   UPSTREAM_BRANCH=`echo v$UPSTREAM_BRANCH`
+fi
+
+## Sanity check on #UPSTREAM_BRANCH
+if [ `echo $UPSTREAM_BRANCH | egrep -c 'v[0-9]\.[0-9]{1,2}\.{0,1}[0-9]{0,2}$'` -lt 1 ]; then
+   echo -e "\nERROR: Upstream branch override provided, but mangled."
+   echo -e "       Should be a valid MDB version number, like 'v4.2' or 'v4.2.1'."
+   echo -e "       Exiting ...\n"
+   exit;
+fi
 
 # Quit if no parameters were passed or if $BRANCHNAME is incomplete:
 if [ -z $BRANCHNAME ]; then
