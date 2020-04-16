@@ -1,11 +1,11 @@
 #!/bin/bash
 
 ## Bash script to automate BAISC MongoDB backports.
-## Backports to ONE previous version branch at a time.
-## If a conflict is encountered in the course of a
-## cherry-pick, notifies the user and terminates,
-## else completes the backport and presents the
-## user with the relevant PR URL.
+## Backports to ONE previous (or future) version
+## branch at a time. If a conflict is encountered in
+## the course of a cherry-pick, notifies the user and
+## terminates, else completes the backport and presents
+## the user with the relevant PR URL.
 
 ## Requirements:
 ##
@@ -22,18 +22,25 @@
 ##         v4.0, v3.6, v3.2
 ##     or minor revison if to future branches, like:
 ##         v4.0.14, v3.6.16, v3.4.24
+##     or the master branch if "up-porting", like:
+##         master
 ##     where commit message contains the jira ticket that
-##     starts your current branchname. Only accepts ONE.
+##     starts your current branchname. Only accepts ONE
+##     target version at a time.
 ## backport resume
 ##     if previous invocation of this utility met with
 ##     a conflict in the cherry-pick stage, and you have
 ##     since manually corrected it, use this to resume
-##     the cherry pick and publish as normal
+##     the cherry pick and publish as normal. Don't forget
+##     to save your changes in VSCode! No need to run
+##     git add or git commit, however.
 ## backport edit
 ##     if you have already created the PR to the previous
 ##     branch, wish to make a last minute change, and
 ##     have not completed the PR in GitHub, you may use
-##     this option to edit the PR.
+##     this option to edit the PR. Don't forget
+##     to save your changes in VSCode! No need to run
+##     git add or git commit, however.
 
 ############################################################
 ## YOUR VALUES ##
@@ -74,6 +81,8 @@ elif [[ "$PARAMETER" =~ ^(resume|RESUME|Resume)$ ]]; then
 elif [[ "$PARAMETER" =~ ^(edit|EDIT|Edit)$ ]]; then
    EDIT=1
    echo "Editing existing backport ..."
+elif [[ "$PARAMETER" =~ ^(master|MASTER|master)$ ]]; then
+   TARGETVERS="master"
 elif [ `echo $PARAMETER | sed 's%^v%%g' | egrep -c '^[0-9]\.[0-9]{1,2}\.{0,1}[0-9]{0,2}$'` -lt 1 ]; then
    echo -e "\nERROR: Invalid backport version provided."
    echo -e "       Must be ONE of major version like: v4.0, v3.6, v3.4"
