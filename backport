@@ -197,7 +197,7 @@ if [ `grep -c 'error: could not apply' $TMPFILE` -gt 0 ]; then
    exit;
 else
    echo -e "\nNo conflicts detected! Huzzah!"
-   echo -e "       Continuing ..."
+   echo -e "       Continuing ...\n"
 fi
 
 git pull --rebase
