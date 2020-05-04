@@ -23,6 +23,8 @@ WORKFLOW_STATUS_DIR=$WORKSPACE/workflow
 ## BEGIN SCRIPT ##
 ##################
 
+TMPFILE=/tmp/push$$.tmp
+
 FORCE=""
 
 ## Check for FORCE override: for force pushing if you know
@@ -49,41 +51,84 @@ if [ `echo $BRANCH | grep -c '^fatal: not a git repository'` -gt 0 ]; then
    exit;
 fi
 
-# Collect info:
-CR_ID=`grep CR_ID $WORKFLOW_STATUS_DIR/$BRANCH | cut -d"=" -f2`
-JIRA=`echo $BRANCH | awk -F\- '{print $1"-"$2}'`
+## Get exiting GIT_EDITOR, to restore later:
+OLD_GIT_EDITOR=`echo $GIT_EDITOR`
 
-# Catch errors, if any, and exit:
-# In reality, you could still use this tool, you just wouldn't get nice URLs
-# at the end. But then why use this tool??
-if [ -z $CR_ID ]; then
-   echo -e "\nERROR: Unable to determine Code Review ID!"
-   echo -e "       You cannot use this tool"
-   echo -e "       Aborting...\n"
-   exit;
-elif [ `echo $BRANCH | egrep -c '(^DOCS-|^DOCSP-)'` -lt 1 ]; then
-   echo -e "\nERROR: Unable to determine Jira Ticket from Branch Name!"
-   echo -e "       You cannot use this tool"
+## Set custom giteditor_autoamend as GIT_EDITOR:
+export GIT_EDITOR=giteditor_autoamend
+
+# Show user current status, before taking any action:
+git status
+
+## Have we committed yet on this branch?
+COMMITTED_YET=`git status -uno | grep upstream`
+
+## If this is our first commit, prompt for a commit message,
+## otherwise silently amend the existing commit:
+if [ `echo $COMMITTED_YET | grep -c 'up to date'` -gt 0 ]; then
+   echo -e "\nINPUT REQUIRED: You have not committed anything yet!"
+   read -p '                COMMIT MESSAGE: ' COMMIT_MESSAGE
+   git add .
+   git commit -m "$COMMIT_MESSAGE"
+elif [ `echo $COMMITTED_YET | grep -c 'is ahead of'` -gt 0 ]; then
+   git add .
+   git commit --amend
+else
+   echo -e "\nERROR: Unable to determine git commit status!"
+   echo -e "       You must manually commit or otherwise correct"
+   echo -e "       the situation!"
    echo -e "       Aborting...\n"
    exit;
 fi
 
-# Push to GitHub, force-pushing if requested:
-git pull --rebase
-if [ ! $FORCE ]; then
+# Collect info:
+CR_ID=`grep CR_ID $WORKFLOW_STATUS_DIR/$BRANCH 2>/dev/null | cut -d"=" -f2`
+JIRA=`echo $BRANCH | awk -F\- '{print $1"-"$2}'`
+
+# Rebase
+git pull --rebase 2>&1 | tee $TMPFILE
+
+# If conflicts are detected, present them and exit,
+# if no conflicts, push the changes:
+if [ `grep -ic 'Merge conflict' $TMPFILE` -gt 0 ]; then
+   CONFLICTING_FILES=`grep 'Merge conflict' $TMPFILE | awk -F'in ' '{print $2}'`
+   echo -e "\nERROR: Merge conflicts detected in rebase! You can:\n"
+   echo -e "     - Manually resolve them and then:"
+   echo -e "           git add ."
+   echo -e "           git rebase --continue"
+   echo -e "           push"
+   echo -e "     - Or cancel this operation with"
+   echo -e "           git rebase --abort\n"
+   echo -e "CONFLICTING FILES:\n"
+   echo $CONFLICTING_FILES
+   echo ""
+   rm -f $TMPFILE
+   exit;
+elif [ ! $FORCE ]; then
    git push origin $BRANCH
 else
    git push -f origin $BRANCH
 fi
 
-# Build URLs:
-GITHUB_URL="https://github.com/$GITUSER/docs/pull/new/$BRANCH"
-CR_URL=https://mongodbcr.appspot.com/$CR_ID
-JIRA_URL="https://jira.mongodb.org/browse/$JIRA"
-
 # Provide links (clickable in VS Code and iTerm2):
 echo -e "\n##############################  PUBLISH READY!  ##############################"
+
+GITHUB_URL="https://github.com/$GITUSER/docs/pull/new/$BRANCH"
 echo -e "\n   1. PULL REQUEST: $GITHUB_URL"
-echo -e "\n   2. CLOSE THE CR: $CR_URL" 
-echo -e "\n   3. CLOSE TICKET: $JIRA_URL"
+
+if [ `echo $BRANCH | egrep -c '(^DOCS-|^DOCSP-)'` -gt 0 ]; then
+   JIRA_URL="https://jira.mongodb.org/browse/$JIRA"
+   echo -e "\n   2. CLOSE TICKET: $JIRA_URL"
+fi
+
+if [ ! -z $CR_ID ]; then
+   CR_URL=https://mongodbcr.appspot.com/$CR_ID
+   echo -e "\n   3. CLOSE THE CR: $CR_URL"
+fi
+
 echo -e "\n##############################################################################\n"
+
+# Replace GIT_EDITOR with original value:
+GIT_EDITOR=`echo $OLD_GIT_EDITOR`
+
+rm -f $TMPFILE
