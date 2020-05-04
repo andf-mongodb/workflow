@@ -1,9 +1,9 @@
 #!/bin/bash
 
 ## Once LGTM has been attained in CR, this script pushes to
-## GitHub and provides easy clickable steps to the reamining
+## GitHub and provides easy clickable steps to the remaining
 ## non-automatable tasks. Must be called within the Git repo
-## you wish to push. Takes no arguments.
+## you wish to push. Supports force-pushing if requested.
 
 ############################################################
 ## YOUR VALUES ##
