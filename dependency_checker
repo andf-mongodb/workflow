@@ -28,7 +28,8 @@ TESTING=1
 ## Separate multiple values with a single space.
 
 ## MongoDB versions to download. Must be full release version. Should be latest:
-MDB_VERS=(4.4.0~rc7)
+#MDB_VERS=(4.4.0~rc7) # DEB versioning for RCs, apparently
+MDB_VERS=(4.4.0-0.1.rc7) # RPM versioning for RCs, apparently
 #MDB_VERS=(4.2.2 4.0.14 3.6.16)
 ## RPM-based platforms to check:
 RPM_PLATFORMS=(redhat amazon suse)
@@ -39,7 +40,7 @@ RHEL_VERS=(6 7 8)
 ## Amazon Linux versions to check. Must use 2013.03 intead of "1":
 AMZN_VERS=(2)
 ## Debian versions to check. Must use codenames:
-DEBIAN_VERS=(buster stretch jessie)
+DEBIAN_VERS=(buster stretch)
 ## Ubuntu versions to check. Must use codenames:
 UBUNTU_VERS=(focal bionic xenial)
 ## SUSE versions to check:
@@ -127,9 +128,12 @@ for EDITION_SWITCH in `seq 0 1`; do
                        MDB_BRANCH=`echo $MDB_VER | egrep -m 1 -o '^[0-9]\.[0-9]{1,2}'`
                    fi
 
-       	       	   ## Assemble URL from all the components we've assembled thus far:
-                   ## ... but AMZN just has to be different:
-                   if [[ $PLATFORM_NAME == "amazon" && $PLATFORM_VER == "2013.03" ]]; then
+       	       	   ## Assemble URL from all the components we've assembled thus far,
+                   ## ... but AMZN just has to be different
+                   ## ... and apparently the 'testing' branch also uses its own versioning:
+                   if [ $TESTING ]; then
+                      URL="$URL_BASE/$PKG_MGR/$PLATFORM_NAME/$PLATFORM_VER/$EDITION_NAME/$MDB_BRANCH/x86_64/RPMS/$EDITION_NAME-server-"$MDB_VER".$BUILD$PLATFORM_VER.x86_64.$PKG_TYPE"
+                   elif [[ $PLATFORM_NAME == "amazon" && $PLATFORM_VER == "2013.03" ]]; then
                       URL="$URL_BASE/$PKG_MGR/$PLATFORM_NAME/$PLATFORM_VER/$EDITION_NAME/$MDB_BRANCH/x86_64/RPMS/$EDITION_NAME-server-"$MDB_VER"-1.amzn1.x86_64.$PKG_TYPE"
                    else
                       URL="$URL_BASE/$PKG_MGR/$PLATFORM_NAME/$PLATFORM_VER/$EDITION_NAME/$MDB_BRANCH/x86_64/RPMS/$EDITION_NAME-server-"$MDB_VER"-1.$BUILD$PLATFORM_VER.x86_64.$PKG_TYPE"
@@ -242,3 +246,4 @@ done
 
 cd $CURRENTDIR
 rm -rf $TMPSPACE
+
