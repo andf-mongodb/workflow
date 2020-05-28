@@ -1,7 +1,54 @@
 #!/bin/bash
 
 ## Downloads MDB install packages appropriate for the platform
-## running this script, and determines dependencies required.
+## running this script, and determines dependencies required,
+## filtering out deps that can be safely assumed to be present
+## on all systems (i.e. glibc).
+
+## General usage:
+##
+##   1. Set TESTING to 0 for mainline versions, or 1 for
+##      release candidates in the 'testing' branch.
+##   2. Update the 8 bash arrays for MDB vers, platforms,
+##      and distro versions as needed.
+##   3. Run script on a DEB-based system to check all
+##      specified MDB DEB files for dependencies, and/or:
+##   4. Run script on an RPM-based system to check all
+##      specified MDB RPM files for dependencies.
+
+############################################################
+## YOUR VALUES ##
+#################
+
+# Set to 1 if testing unreleased RC candidates, like 4.4.0~rc7
+# Set to 0 to use mainline versioning, like 4.2.7
+TESTING=1
+
+## Provide bash arrays of what to download / check for.
+## Separate multiple values with a single space.
+
+## MongoDB versions to download. Must be full release version. Should be latest:
+MDB_VERS=(4.4.0~rc7)
+#MDB_VERS=(4.2.2 4.0.14 3.6.16)
+## RPM-based platforms to check:
+RPM_PLATFORMS=(redhat amazon suse)
+## DEB-based platforms to check:
+DEB_PLATFORMS=(debian ubuntu)
+## RHEL versions to check:
+RHEL_VERS=(6 7 8)
+## Amazon Linux versions to check. Must use 2013.03 intead of "1":
+AMZN_VERS=(2)
+## Debian versions to check. Must use codenames:
+DEBIAN_VERS=(buster stretch jessie)
+## Ubuntu versions to check. Must use codenames:
+UBUNTU_VERS=(focal bionic xenial)
+## SUSE versions to check:
+SUSE_VERS=(12 15)
+
+
+############################################################
+## BEGIN SCRIPT ##
+##################
 
 TMPSPACE=/tmp/dependency_tester$$
 
@@ -29,26 +76,6 @@ if [ `command -v curl | grep -ic curl` -ne 1 ]; then
    exit;
 fi
 
-
-## Provide bash arrays of what to download / check for.
-## Separate multiple values with a single space.
-
-## MongoDB versions to download. Must be full release version. Should be latest:
-MDB_VERS=(4.2.2 4.0.14 3.6.16)
-## RPM-based platforms to check:
-RPM_PLATFORMS=(redhat amazon suse)
-## DEB-based platforms to check:
-DEB_PLATFORMS=(debian ubuntu)
-## RHEL versions to check:
-RHEL_VERS=(6 7 8)
-## Amazon Linux versions to check. Must use 2013.03 intead of "1":
-AMZN_VERS=(2013.03 2)
-## Debian versions to check. Must use codenames:
-DEBIAN_VERS=(buster stretch jessie)
-## Ubuntu versions to check. Must use codenames:
-UBUNTU_VERS=(bionic xenial trusty)
-## SUSE versions to check:
-SUSE_VERS=(12 15)
 
 ## For each edition, build out URLS that we'll be using to download and check.
 ## A series of for loops generates the unique URLs for both MDB editions for
@@ -92,8 +119,13 @@ for EDITION_SWITCH in `seq 0 1`; do
                ## Loop per MongoDB version:
                for MDB_VER in "${MDB_VERS[@]}"; do
 
-                   ## Determine MongoDB branch from provided version (i.e. 4.2 from 4.2.2):
-                   MDB_BRANCH=`echo $MDB_VER | egrep -m 1 -o '^[0-9]\.[0-9]{1,2}'`
+                   ## Determine MongoDB branch from provided version (i.e. 4.2 from 4.2.2),
+                   ## or use 'testing' if $TESTING is set:
+                   if [ $TESTING ]; then
+                       MDB_BRANCH="testing"
+                   else
+                       MDB_BRANCH=`echo $MDB_VER | egrep -m 1 -o '^[0-9]\.[0-9]{1,2}'`
+                   fi
 
        	       	   ## Assemble URL from all the components we've assembled thus far:
                    ## ... but AMZN just has to be different:
@@ -173,8 +205,13 @@ for EDITION_SWITCH in `seq 0 1`; do
                ## Loop per MongoDB version:
                for MDB_VER in "${MDB_VERS[@]}"; do
 
-       	       	   ## Determine MongoDB branch from provided version (i.e. 4.2 from 4.2.2):
-                   MDB_BRANCH=`echo $MDB_VER | egrep -m 1 -o '^[0-9]\.[0-9]{1,2}'`
+       	       	   ## Determine MongoDB branch from provided version (i.e. 4.2 from 4.2.2),
+                   ## or use 'testing' if $TESTING is set:
+                   if [ $TESTING ]; then
+                       MDB_BRANCH="testing"
+                   else
+                       MDB_BRANCH=`echo $MDB_VER | egrep -m 1 -o '^[0-9]\.[0-9]{1,2}'`
+                   fi
 
                    ## Assemble URL from all the components we've assembled thus far:
                    URL="$URL_BASE/$PKG_MGR/$PLATFORM_NAME/dists/$PLATFORM_VER/$EDITION_NAME/$MDB_BRANCH/$RELEASE/binary-amd64/$EDITION_NAME-server_"$MDB_VER"_amd64.$PKG_TYPE"
