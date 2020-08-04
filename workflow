@@ -50,12 +50,12 @@ shift $((OPTIND -1))
 BRANCHNAME=$1
 
 ## If $UPSTREAM_BRANCH does not begin with a 'v' character, and is not master, add it:
-if [[ $UPSTREAM_BRANCH -ne "master" && `echo $UPSTREAM_BRANCH | grep -c '^v.*'` -lt 1 ]]; then
+if [[ `echo $UPSTREAM_BRANCH | grep -c "master"` -lt 1 && `echo $UPSTREAM_BRANCH | grep -c '^v.*'` -lt 1 ]]; then
    UPSTREAM_BRANCH=`echo v$UPSTREAM_BRANCH`
 fi
 
 ## Sanity check on $UPSTREAM_BRANCH if not master:
-if [[ $UPSTREAM_BRANCH -ne "master" && `echo $UPSTREAM_BRANCH | egrep -c 'v[0-9]\.[0-9]{1,2}\.{0,1}[0-9]{0,2}$'` -lt 1 ]]; then
+if [[ `echo $UPSTREAM_BRANCH | grep -c "master"` -lt 1 && `echo $UPSTREAM_BRANCH | egrep -c 'v[0-9]\.[0-9]{1,2}\.{0,1}[0-9]{0,2}$'` -lt 1 ]]; then
    echo -e "\nERROR: Upstream branch override provided, but mangled."
    echo -e "       Should be a valid MDB version number, like 'v4.2' or 'v4.2.1'."
    echo -e "       Exiting ...\n"
