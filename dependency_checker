@@ -231,7 +231,7 @@ for EDITION_SWITCH in `seq 0 1`; do
                       FILENAME=`echo $URL | sed s%^.*binary-amd64/%%g`
 
                       ## List dependencies, skipping GCC/GLIBC and built-ins:
-                      dpkg -I $FILENAME | grep Depends | sed 's%Depends: %%g' | sed 's%,%\n%g' | egrep -v '(adduser|tzdata|libc6|libgcc1)'
+                      dpkg -I $FILENAME | grep Depends | sed 's%Depends: %%g' | sed 's%,%\n%g' | egrep -v '(adduser|tzdata|libc6|libgcc1|libgcc-s1)'
 
                       ## Clean up DEB:
                       rm -f $FILENAME
