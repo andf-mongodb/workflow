@@ -117,6 +117,7 @@ if [[ ! -z $RESUME || ! -z $EDIT ]]; then
       cat $TMPFILE.missed
       echo -e "#############################################################"
       echo -e "\nAborting...\n"
+      rm -f $TMPFILE.*
       exit;
    fi
 
@@ -185,10 +186,10 @@ fi
 ## Perform work:
 git checkout -b $TARGETVERS-$JIRA upstream/$TARGETVERS
 git pull --rebase
-git cherry-pick $COMMIT 2>&1 | tee $TMPFILE 2>&1 > /dev/null
+git cherry-pick $COMMIT 2>&1 | tee $TMPFILE.out 2>&1 > /dev/null
 
 ## Determine if there is a conflict:
-if [ `grep -c 'error: could not apply' $TMPFILE` -gt 0 ]; then
+if [ `grep -c 'error: could not apply' $TMPFILE.out` -gt 0 ]; then
    echo -e "\nALERT: CONFLICTS DETECTED"
    echo -e "       You must now manually correct conflicts."
    echo -e "       When ready, use 'backport resume' to return to this step."
