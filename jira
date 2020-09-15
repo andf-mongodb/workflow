@@ -1,0 +1,40 @@
+#!/bin/bash
+
+## Bash script to open up a specific Jira ticket, provided
+## as a parameter to this script, in a web browser. Yes I
+## am lazy.
+
+############################################################
+## BEGIN SCRIPT ##
+##################
+
+## Check for provided parameter:
+PARAMETER=$1
+
+# Parse user-provided parameter and determine what to do:
+if [ -z $PARAMETER ]; then
+   echo -e "\nERROR: No parameter provided. You must provide the JIRA ticket"
+   echo -e "     to work on."
+   echo -e "       Exiting ...\n"
+   exit;
+elif [ ! -z $2 ]; then
+   echo -e "\nERROR: Too many parameters provided. You must provide only one"
+   echo -e "     JIRA ticket to work on."
+   echo -e "       Exiting ...\n"
+   exit;
+elif [ `echo $PARAMETER | egrep -c '(^DOCS-[0-9]{1,9}$|^DOCSP-[0-9]{1,9}$)'` -lt 1 ]; then
+   echo -e "\nERROR: Invalid JIRA ticket format provided."
+   echo -e "       Expecting something like DOCS-12345 or DOCSP-12345"
+   echo -e "       Exiting ...\n"
+   exit;
+else
+   JIRA=$PARAMETER
+fi
+
+JIRA_URL="https://jira.mongodb.com/browse/$JIRA"
+
+# OSX ONLY: Open staged build in browser:
+open $JIRA_URL
+
+# LINUX ONLY: Open staged build in browser (tries everything):
+#xdg-open $JIRA_URL || sensible-browser $STAGE_URL || x-www-browser $STAGE_URL || gnome-open $STAGE_URL

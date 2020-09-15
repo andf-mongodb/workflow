@@ -1,0 +1,60 @@
+#!/bin/bash
+
+## Opens an repo directory, already created using `workflow`
+## in VS Code for further work. Matches against existing
+## repos by finding the provided JIRA ticket in the branch
+## name (specifically: the directory name, which `workflow`
+## creates based on the branch name). Does not attempt to
+## rectify situations where multiple possible target repo
+## directories are found: just errors out in these cases.
+
+############################################################
+## YOUR VALUES ##
+#################
+
+## Your docs workspace (i.e. where to git clone to)
+## If you use a ~ in the path, don't quote the value:
+WORKSPACE=~/doc_workspace
+
+############################################################
+## BEGIN SCRIPT ##
+##################
+
+## Check for provided parameter:
+PARAMETER=$1
+
+# Parse user-provided parameter and determine what to do:
+if [ -z $PARAMETER ]; then
+   echo -e "\nERROR: No parameter provided. You must provide the JIRA ticket"
+   echo -e "     to work on."
+   echo -e "       Exiting ...\n"
+   exit;
+elif [ ! -z $2 ]; then
+   echo -e "\nERROR: Too many parameters provided. You must provide only one"
+   echo -e "     JIRA ticket to work on."
+   echo -e "       Exiting ...\n"
+   exit;
+elif [ `echo $PARAMETER | egrep -c '(^DOCS-[0-9]{1,9}$|^DOCSP-[0-9]{1,9}$)'` -lt 1 ]; then
+   echo -e "\nERROR: Invalid JIRA ticket format provided."
+   echo -e "       Expecting something like DOCS-12345 or DOCSP-12345"
+   echo -e "       Exiting ...\n"
+   exit;
+else
+   JIRA=$PARAMETER
+fi
+
+if [ `ls -l $WORKSPACE 2>/dev/null | grep -c $JIRA` -lt 1 ]; then
+   echo -e "\nERROR: Ticket not found in existing git repos!"
+   echo -e "       Do you need to create a new one? Use workflow."
+   echo -e "       Exiting ...\n"
+   exit;
+elif [ `ls -l $WORKSPACE | grep -c $JIRA` -gt 1 ]; then
+   echo -e "\nERROR: Multiple matching git repos found!"
+   echo -e "       This tool can't handle that yet. Get there manually."
+   echo -e "       Exiting ...\n"
+   exit;
+else
+   DIRNAME=`ls -d $WORKSPACE/*$JIRA*`
+   cd $DIRNAME
+   code .
+fi
