@@ -1,6 +1,6 @@
 #!/bin/bash
 
-## Opens an repo directory, already created using `workflow`
+## Opens a repo directory, already created using `workflow`,
 ## in VS Code for further work. Matches against existing
 ## repos by finding the provided JIRA ticket in the branch
 ## name (specifically: the directory name, which `workflow`
