@@ -67,6 +67,10 @@ if [ `echo $COMMITTED_YET | grep -c 'up to date'` -gt 0 ]; then
 elif [ `echo $COMMITTED_YET | grep -c 'is ahead of'` -gt 0 ]; then
    git add .
    git commit --amend
+elif [ `echo $COMMITTED_YET | grep -c 'have diverged'` -gt 0 ]; then
+   ## TESTING -- Seemingly required for `review`-ing backport branches:
+   git add .
+   git commit --amend
 else
    echo -e "\nERROR: Unable to determine git commit status!"
    echo -e "       You must manually commit or otherwise correct"
