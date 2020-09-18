@@ -22,7 +22,7 @@ elif [ ! -z $2 ]; then
    echo -e "     JIRA ticket to work on."
    echo -e "       Exiting ...\n"
    exit;
-elif [ `echo $PARAMETER | egrep -c '(^DOCS-[0-9]{1,9}$|^DOCSP-[0-9]{1,9}$)'` -lt 1 ]; then
+elif [ `echo $PARAMETER | egrep -c '^[A-Z]{3,9}-[0-9]{1,9}$'` -lt 1 ]; then
    echo -e "\nERROR: Invalid JIRA ticket format provided."
    echo -e "       Expecting something like DOCS-12345 or DOCSP-12345"
    echo -e "       Exiting ...\n"
