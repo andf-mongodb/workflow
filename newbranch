@@ -1,0 +1,41 @@
+#!/bin/bash
+
+############################################################
+## BEGIN SCRIPT ##
+##################
+
+TMPDIR=/tmp/newbranch$$
+
+## Check for provided parameter:
+PARAMETER=$1
+
+## Parse user-provided parameter and determine what to do:
+if [[ -z $PARAMETER || ! -z $2 ]]; then
+   echo -e "\nERROR: Either no or 2+ parameters provided. You must provide ONE"
+   echo -e "     MDB version like: v4.2.3, v4.0.14, etc"
+   echo -e "     Exiting ...\n"
+   exit;
+elif [ `echo $PARAMETER | sed 's%^v%%g' | egrep -c '^[0-9]\.[0-9]\.[0-9]{1,2}$'` -lt 1 ]; then
+   echo -e "\nERROR: Invalid MDB  version provided."
+   echo -e "       Must be ONE MDB version like: v4.2.3, v4.0.14, etc"
+   echo -e "       Exiting ...\n"
+   exit;
+else
+   VERS=`echo $PARAMETER | sed 's%^v%%g'`
+   MAJORVERS=`echo $VERS | awk -F'.' '{print $1"."$2}'`
+fi
+
+mkdir -p $TMPDIR
+
+cd $TMPDIR
+git clone git@github.com:mongodb/docs.git
+cd docs
+
+git checkout v$MAJORVERS
+git pull --rebase
+git push origin v$MAJORVERS:v$VERS
+
+rm -rf $TMPDIR
+
+
+
