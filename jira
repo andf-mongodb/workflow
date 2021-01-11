@@ -37,4 +37,4 @@ JIRA_URL="https://jira.mongodb.com/browse/$JIRA"
 open $JIRA_URL
 
 # LINUX ONLY: Open staged build in browser (tries everything):
-#xdg-open $JIRA_URL || sensible-browser $STAGE_URL || x-www-browser $STAGE_URL || gnome-open $STAGE_URL
+#xdg-open $JIRA_URL || sensible-browser $JIRA_URL || x-www-browser $JIRA_URL || gnome-open $JIRA_URL
