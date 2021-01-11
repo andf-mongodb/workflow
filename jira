@@ -8,8 +8,8 @@
 ## BEGIN SCRIPT ##
 ##################
 
-## Check for provided parameter:
-PARAMETER=$1
+## Check for provided parameter (and uppercase it):
+PARAMETER=`echo "$1" | tr a-z A-Z`
 
 # Parse user-provided parameter and determine what to do:
 if [ -z $PARAMETER ]; then
