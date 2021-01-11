@@ -1,8 +1,19 @@
 #!/bin/bash
 
 ############################################################
+## YOUR VALUES ##
+#################
+
+## Specify the version of 'master' if anything other than
+## 'upcoming'. To disable this checking, change this value
+## to 'master' instead:
+CURRENTMASTER="v4.4"
+
+############################################################
 ## BEGIN SCRIPT ##
 ##################
+
+SOURCEISMASTER=0
 
 TMPDIR=/tmp/newbranch$$
 
@@ -23,6 +34,12 @@ elif [ `echo $PARAMETER | sed 's%^v%%g' | egrep -c '^[0-9]\.[0-9]\.[0-9]{1,2}$'`
 else
    VERS=`echo $PARAMETER | sed 's%^v%%g'`
    MAJORVERS=`echo $VERS | awk -F'.' '{print $1"."$2}'`
+
+   ## Determine if provided VERS requires 'master' as source branch:
+   CURRENTMASTER=`echo $CURRENTMASTER | sed 's%^v%%g'`
+   if [ $CURRENTMASTER == $MAJORVERS ]; then
+      SOURCEISMASTER=1
+   fi
 fi
 
 mkdir -p $TMPDIR
@@ -31,9 +48,17 @@ cd $TMPDIR
 git clone git@github.com:mongodb/docs.git
 cd docs
 
-git checkout v$MAJORVERS
-git pull --rebase
-git push origin v$MAJORVERS:v$VERS
+## Source new minor release branch from appropriate
+## major release branch:
+if [ $SOURCEISMASTER == 1 ]; then
+   git checkout master
+   git pull --rebase
+   git push origin master:v$VERS
+else
+   git checkout v$MAJORVERS
+   git pull --rebase
+   git push origin v$MAJORVERS:v$VERS
+fi
 
 rm -rf $TMPDIR
 
