@@ -14,7 +14,7 @@
 ## tools.
 
 ## Set input directory to parse through:
-INPUTDIR="/Users/andrew.feierabend/scripts/"
+INPUTDIR="/Users/my.username/scripts/"
 
 ## Set initial tracking variable to 0:
 DO_PATTERN_MATCH=0
