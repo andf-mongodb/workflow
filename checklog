@@ -1,0 +1,60 @@
+#!/bin/bash
+
+## A tiny little logchecker for ServerDocs Team
+
+## Provide the JOB ID of your completed build log as an argument
+## to this script, and it will output any WARNINGS or ERRORS
+## that are not presently expected (i.e. new ones that you
+## introduced, if any). If no errors or warning appear from
+## running this script, you are clear!
+
+## USAGE:
+##
+## logcheck 608050db09293ae626bc5cee
+
+
+## Get build log URL as argument:
+JOBID=$1
+
+# Quit if no parameters were passed or if $BUILDLOG_URL is incomplete:
+if [ -z $JOBID ]; then
+   echo -e "\nERROR: You must provide the Job ID as an argument."
+   echo -e "       It can be found in the URL of your build log"
+   echo -e "       Exiting ...\n"
+   exit;
+elif [ `echo $JOBID | grep -Ec '^[0-9a-z]{24}$'` -lt 1 ]; then
+   echo -e "\nERROR: Your Job ID appears mangled."
+   echo -e "       Example Job ID from build log:"
+   echo -e ""
+   echo -e "       608050db09293ae626bc5cee"
+   echo -e ""
+   echo -e "       Exiting ...\n"
+   exit;
+fi
+
+# Set up local /tmp logfile path:
+LOCALLOG="/tmp/buildlogcheck_$$.tmp"
+
+# Download BUILDLOG_URL to /tmp:
+node getLogs.js $JOBID > $LOCALLOG
+
+# That ol' familiar bash field separator:
+IFS="
+"
+
+# Print any WARNING or ERROR that is presently unexpected:
+for LINE in `cat $LOCALLOG`; do
+   echo $LINE \
+      | grep -v '^ERROR.*compass/manual.*.png: No such file or directory$' \
+      | grep -v '^ERROR.*One or more set of tabs on this page was missing.*}$' \
+      | grep -v '^ERROR.*Target not found: "phpmethod:phpmethod.*"$' \
+      | grep -v '^ERROR.*Target not found: "phpclass:phpclass.*"$' \
+      | grep -v '^ERROR.*Target not found: "meth:pymongo.*"$' \
+      | grep -v '^ERROR.*Target not found: "meth:motor.*"$' \
+      | grep -v '^ERROR.*Target not found: "authaction:.*"$' \
+      | grep -v '^INFO:snooty.main:Snooty.*starting$'
+done
+
+echo "   Check complete!
+
+rm -f $LOCALLOG
