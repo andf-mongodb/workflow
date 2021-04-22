@@ -55,6 +55,6 @@ for LINE in `cat $LOCALLOG`; do
       | grep -v '^INFO:snooty.main:Snooty.*starting$'
 done
 
-echo "   Check complete!
+echo "   Check complete!"
 
 rm -f $LOCALLOG
