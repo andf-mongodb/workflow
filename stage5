@@ -1,0 +1,62 @@
+#!/bin/bash
+
+## Tiny script to automate staging of v5.0, reusing URL
+## (thanks to Maddie & Guru). Thus a single URL can
+## be given out to TSEs, etc and we can update on request
+## (or nightly on crontab!)
+
+## Requirements: You must have a fork of MDB docs repo
+##               That fork must be configured for autobuilder
+##               You MUST specify your GITUSER below!
+
+
+## Specify a STAGE_SLUG below if you like. Default is
+## probably fine and will look like this once autobuilt:
+##
+## https://docs-mongodbcom-staging.corp.mongodb.com/docs/docsworker-xlarge/v5.0-latest-preview/release-notes/5.0/
+
+
+############################################################
+## YOUR VALUES ##
+#################
+
+## Your github username:
+GITUSER=your_github_username
+
+## The custom slug for the staging URL. Pick one and don't
+## change it once you've given it out to others, or their
+## link will grow stale when you go to refresh using a new link!
+## This is, practically, just the git branchname:
+STAGE_SLUG="v5.0-latest-preview"
+
+############################################################
+## BEGIN SCRIPT ##
+##################
+
+## Clone docs repo
+cd /tmp
+git clone git@github.com:$GITUSER/docs.git
+rm -rf docs_stage5
+mv docs docs_stage5
+cd docs_stage5/
+
+## Set up upstream. Yes there's a better way:
+git remote add upstream git@github.com:mongodb/docs.git
+sed -i '' 's%remote = origin%remote = upstream%g' .git/config
+git pull upstream
+
+## Rebase latest v5.0 content:
+git checkout -b $STAGE_SLUG upstream/v5.0
+git pull --rebase
+
+## Push an empty commit to trigger autobuilder.
+git commit --allow-empty -m "DOCSP-15845 Refresh v5.0 staging"
+git push -f origin $STAGE_SLUG
+
+# Output results:
+echo -e "Successfully submitted to the autobuilder.
+echo -e "Refresh should be live in 10 minutes at:\n"
+echo "https://docs-mongodbcom-staging.corp.mongodb.com/docs/docsworker-xlarge/$STAGE_SLUG/release-notes/5.0/"
+
+# Remove local copy:
+rm -rf /tmp/docs_stage5
