@@ -54,7 +54,7 @@ git commit --allow-empty -m "DOCSP-15845 Refresh v5.0 staging"
 git push -f origin $STAGE_SLUG
 
 # Output results:
-echo -e "Successfully submitted to the autobuilder.
+echo -e "\n\nSuccessfully submitted to the autobuilder!"
 echo -e "Refresh should be live in 10 minutes at:\n"
 echo "https://docs-mongodbcom-staging.corp.mongodb.com/docs/docsworker-xlarge/$STAGE_SLUG/release-notes/5.0/"
 
