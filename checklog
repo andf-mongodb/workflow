@@ -45,6 +45,7 @@ IFS="
 # Print any WARNING or ERROR that is presently unexpected:
 for LINE in `cat $LOCALLOG`; do
    echo $LINE \
+      | grep -v '^WARNING.*Directive "only" has been deprecated$' \
       | grep -v '^ERROR.*compass/manual.*.png: No such file or directory$' \
       | grep -v '^ERROR.*One or more set of tabs on this page was missing.*}$' \
       | grep -v '^ERROR.*Target not found: "phpmethod:phpmethod.*"$' \
