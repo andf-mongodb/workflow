@@ -7,7 +7,7 @@
 ## Specify the version of 'master' if anything other than
 ## 'upcoming'. To disable this checking, change this value
 ## to 'master' instead:
-CURRENTMASTER="v4.4"
+CURRENTMASTER="v5.0"
 
 ############################################################
 ## BEGIN SCRIPT ##
